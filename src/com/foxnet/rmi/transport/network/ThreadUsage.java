@@ -29,82 +29,35 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.foxnet.rmi.util;
+package com.foxnet.rmi.transport.network;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.Serializable;
 
 /**
  * 
  * @author Christopher Probst
  * 
- * @param <T>
  */
-public final class WrapperInputStream<T extends InputStream> extends
-		InputStream {
+public final class ThreadUsage implements Serializable {
 
-	private T input;
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 
-	public WrapperInputStream() {
-		this(null);
-	}
+	public static final ThreadUsage DEFAULT = new ThreadUsage(Runtime
+			.getRuntime().availableProcessors() * 2, 16);
 
-	public WrapperInputStream(T input) {
-		setInput(input);
-	}
+	public final int networkThreads, invocationThreads;
 
-	public T setInput(T input) {
-		T oldInput = this.input;
-		this.input = input;
-		return oldInput;
-	}
+	public ThreadUsage(int networkThreads, int invocationThreads) {
+		if (networkThreads < 1) {
+			throw new IllegalArgumentException("networkThreads must be > 0");
+		} else if (invocationThreads < 1) {
+			throw new IllegalArgumentException("invocationThreads must be > 0");
+		}
 
-	public T getInput() {
-		return input;
-	}
-
-	@Override
-	public int read() throws IOException {
-		return input.read();
-	}
-
-	@Override
-	public int read(byte[] b) throws IOException {
-		return input.read(b);
-	}
-
-	@Override
-	public int read(byte[] b, int off, int len) throws IOException {
-		return input.read(b, off, len);
-	}
-
-	@Override
-	public void close() throws IOException {
-		input.close();
-	}
-
-	@Override
-	public long skip(long n) throws IOException {
-		return input.skip(n);
-	}
-
-	@Override
-	public int available() throws IOException {
-		return input.available();
-	}
-
-	@Override
-	public void mark(int readlimit) {
-		input.mark(readlimit);
-	}
-
-	@Override
-	public boolean markSupported() {
-		return input.markSupported();
-	}
-
-	@Override
-	public void reset() throws IOException {
-		input.reset();
+		this.networkThreads = networkThreads;
+		this.invocationThreads = invocationThreads;
 	}
 }

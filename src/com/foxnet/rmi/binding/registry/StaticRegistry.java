@@ -29,18 +29,23 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.foxnet.rmi.registry;
+package com.foxnet.rmi.binding.registry;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import com.foxnet.rmi.Remote;
+import com.foxnet.rmi.binding.Remote;
 import com.foxnet.rmi.binding.StaticBinding;
 
 /**
  * @author Christopher Probst
  */
 public final class StaticRegistry extends Registry<StaticBinding> {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 
 	// Used to store the ids linked with their static binding
 	private final Map<Long, StaticBinding> ids = new HashMap<Long, StaticBinding>();
@@ -172,7 +177,7 @@ public final class StaticRegistry extends Registry<StaticBinding> {
 		// Verify target
 		if (!(target instanceof Remote)) {
 			throw new IllegalArgumentException("The target does not "
-					+ " implement the Remote interface.");
+					+ "implement the Remote interface");
 		}
 
 		// Get old binding...

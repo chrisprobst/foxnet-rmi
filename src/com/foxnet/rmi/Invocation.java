@@ -31,6 +31,10 @@
  */
 package com.foxnet.rmi;
 
+import java.lang.reflect.Method;
+
+import com.foxnet.rmi.util.Future;
+
 /**
  * @author Christopher Probst
  */
@@ -39,21 +43,21 @@ public final class Invocation extends Future {
 	// Used to store the invoker
 	private final Invoker invoker;
 
-	// Used to store the method name
-	private final String methodName;
+	// Used to store the method
+	private final Method method;
 
 	// Used to store the args
 	private final Object[] args;
 
-	public Invocation(Invoker invoker, String methodName, Object... args) {
+	public Invocation(Invoker invoker, Method method, Object... args) {
 		if (invoker == null) {
 			throw new NullPointerException("invoker");
-		} else if (methodName == null) {
-			throw new NullPointerException("methodName");
+		} else if (method == null) {
+			throw new NullPointerException("method");
 		}
 
 		this.invoker = invoker;
-		this.methodName = methodName;
+		this.method = method;
 		this.args = args;
 	}
 
@@ -61,8 +65,12 @@ public final class Invocation extends Future {
 		return invoker;
 	}
 
+	public Method getMethod() {
+		return method;
+	}
+
 	public String getMethodName() {
-		return methodName;
+		return method.getName();
 	}
 
 	public Object[] getArguments() {

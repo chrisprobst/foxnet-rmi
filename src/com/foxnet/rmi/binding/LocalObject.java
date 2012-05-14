@@ -29,39 +29,43 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.foxnet.rmi;
-
-import java.io.IOException;
-import java.util.concurrent.Executor;
-
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-
-import com.foxnet.rmi.registry.DynamicRegistry;
-import com.foxnet.rmi.registry.StaticRegistry;
+package com.foxnet.rmi.binding;
 
 /**
+ * This class represents a local object, which means that it refers to a dynamic
+ * or static registry which contains the "real" object.
+ * 
  * @author Christopher Probst
+ * 
  */
-public interface Connection {
+public class LocalObject extends IdObject {
 
-    Invoker invoker(String target) throws IOException;
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 
-    Object lookup(String target) throws IOException;
+	// Is this a dynamic local object ? (false means static)
+	private final boolean dynamic;
 
-    String[] list() throws IOException;
+	/**
+	 * Creates a new local object.
+	 * 
+	 * @param id
+	 *            The id of the new local object.
+	 * @param dynamic
+	 *            The dynamic flag.
+	 */
+	public LocalObject(long id, boolean dynamic) {
+		super(id);
+		this.dynamic = dynamic;
+	}
 
-    StaticRegistry getStaticRegistry();
+	public boolean isDynamic() {
+		return dynamic;
+	}
 
-    DynamicRegistry getDynamicRegistry();
-
-    Executor getMethodInvocator();
-
-    Channel getChannel();
-
-    ChannelFuture getCloseFuture();
-
-    ChannelFuture close();
-
-    ConnectionManager getManager();
+	public boolean isStatic() {
+		return !dynamic;
+	}
 }

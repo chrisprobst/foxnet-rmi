@@ -29,58 +29,11 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.foxnet.rmi.util;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicLong;
+package com.foxnet.rmi.binding;
 
 /**
  * @author Christopher Probst
  */
-public final class RequestManager {
+public interface Remote {
 
-	// Used to generate ids
-	private final AtomicLong nextId = new AtomicLong(0);
-
-	// Used to store the requests
-	final ConcurrentMap<Long, Request> requests = new ConcurrentHashMap<Long, Request>();
-
-	public Collection<Request> getRequests() {
-		return requests.values();
-	}
-
-	public Request getRequest(long id) {
-		// Try to get request
-		return requests.get(id);
-	}
-
-	public void setCauseToAll(Throwable cause) {
-		// Copy requests
-		List<Request> remainingRequests = new ArrayList<Request>(getRequests());
-		requests.clear();
-
-		for (Request r : remainingRequests) {
-			r.failed(cause);
-		}
-	}
-
-	public Request addRequest() {
-		return addRequest(null);
-	}
-
-	public Request addRequest(Object request) {
-
-		// Create request object
-		Request tmpRequest = new Request(this, nextId.getAndIncrement(),
-				request);
-
-		// Add
-		requests.put(tmpRequest.getId(), tmpRequest);
-
-		return tmpRequest;
-	}
 }

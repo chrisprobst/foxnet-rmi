@@ -31,8 +31,7 @@
  */
 package com.foxnet.rmi.util;
 
-import com.foxnet.rmi.Future;
-import com.foxnet.rmi.FutureCallback;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 
@@ -41,47 +40,35 @@ import com.foxnet.rmi.FutureCallback;
  */
 public final class Request extends Future {
 
-	// The request manager of this request
-	private final RequestManager requestManager;
+	public static final long INVALID_ID = 0;
+
+	public static final AtomicLong ID_GENERATOR = new AtomicLong(INVALID_ID + 1);
 
 	// Used to identify the request
 	private final long id;
 
-	// Used to store the initial request
-	private final Object request;
+	// Used to store the initial data
+	private final Object data;
 
-	Request(RequestManager requestManager, long id, Object request) {
+	public Request(Object request) {
+		this(request, ID_GENERATOR.getAndIncrement());
+	}
 
-		if (requestManager == null) {
-			throw new NullPointerException("requestManager");
+	public Request(Object data, long id) {
+
+		if (id == INVALID_ID) {
+			throw new IllegalArgumentException("The id is invalid");
 		}
-
-		// Save the request manager
-		this.requestManager = requestManager;
 
 		// The id of this request
 		this.id = id;
 
-		// Save the initial request
-		this.request = request;
-
-		// Remove this request when completed
-		add(new FutureCallback() {
-
-			@Override
-			public void completed(Future future) throws Exception {
-				// Remove this request
-				getRequestManager().requests.remove(getId());
-			}
-		});
+		// Save the initial data
+		this.data = data;
 	}
 
-	public RequestManager getRequestManager() {
-		return requestManager;
-	}
-
-	public Object getRequest() {
-		return request;
+	public Object getData() {
+		return data;
 	}
 
 	public long getId() {

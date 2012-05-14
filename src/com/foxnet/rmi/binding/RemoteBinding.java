@@ -54,6 +54,21 @@ public final class RemoteBinding extends Binding {
 	// Maps methods to their ids
 	private final Map<Method, Integer> methodIds;
 
+	// Maps method names to their ids
+	private final Map<String, Integer> nameIds;
+
+	/**
+	 * Creates a new remote binding.
+	 * 
+	 * @param remoteObject
+	 *            The base remote object.
+	 * @param dynamic
+	 *            The dynamic flag.
+	 */
+	public RemoteBinding(RemoteObject remoteObject, boolean dynamic) {
+		this(remoteObject.getId(), remoteObject.getInterfaces(), dynamic);
+	}
+
 	/**
 	 * Creates a new remote binding.
 	 * 
@@ -70,15 +85,18 @@ public final class RemoteBinding extends Binding {
 		// Save
 		this.dynamic = dynamic;
 
-		// Create method ids
+		// Create maps
 		int index = 0;
 		Map<Method, Integer> tmpMethodIds = new HashMap<Method, Integer>();
-		for (Method method : this) {
-			tmpMethodIds.put(method, index++);
+		Map<String, Integer> tmpNameIds = new HashMap<String, Integer>();
+		for (Method method : getMethods()) {
+			tmpMethodIds.put(method, index);
+			tmpNameIds.put(method.getName(), index++);
 		}
 
-		// Save unmodifiable map
+		// Save unmodifiable maps
 		methodIds = Collections.unmodifiableMap(tmpMethodIds);
+		nameIds = Collections.unmodifiableMap(tmpNameIds);
 	}
 
 	/*
@@ -92,21 +110,16 @@ public final class RemoteBinding extends Binding {
 	}
 
 	/**
-	 * Check whether or not the given method is part of this binding.
-	 * 
-	 * @param method
-	 *            The method you want to check.
-	 * @return true if this method is part of this binding, otherwise false.
+	 * @return the method-to-id map.
 	 */
-	public boolean hasMethodId(Method method) {
-		return methodIds.containsKey(method);
+	public Map<Method, Integer> getMethodIds() {
+		return methodIds;
 	}
 
-	public int getMethodId(Method method) {
-		Integer methodId = methodIds.get(method);
-		if (methodId == null) {
-			throw new IllegalArgumentException("Unknown method: " + methodId);
-		}
-		return methodId.intValue();
+	/**
+	 * @return the method-name-to-id map.
+	 */
+	public Map<String, Integer> getNameIds() {
+		return nameIds;
 	}
 }

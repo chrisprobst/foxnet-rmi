@@ -29,37 +29,53 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.foxnet.rmi;
+package com.foxnet.rmi.transport.network.handler.reqres;
 
 import java.io.Serializable;
+
+import com.foxnet.rmi.util.Request;
 
 /**
  * 
  * @author Christopher Probst
  * 
  */
-public final class MemoryUsage implements Serializable {
+final class ReqResMessage implements Serializable {
 
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
 
-	public static final MemoryUsage DEFAULT = new MemoryUsage(
-			0x20000000 /* 512MB */, 0xA00000 /* 10MB */);
+	private final Object data;
+	private final Throwable cause;
+	private final long id;
+	private final boolean request;
 
-	public final int globalMemory, localMemory;
+	public ReqResMessage(Request request) {
+		this(request.getData(), null, request.getId(), true);
+	}
 
-	public MemoryUsage(int globalMemory, int localMemory) {
-		if (globalMemory < localMemory) {
-			throw new IllegalArgumentException("Global memory must "
-					+ "be >= local memory");
-		} else if (localMemory < 1) {
-			throw new IllegalArgumentException("Global and local "
-					+ "memory must be positive");
-		}
+	public ReqResMessage(Object data, Throwable cause, long id, boolean request) {
+		this.data = data;
+		this.cause = cause;
+		this.id = id;
+		this.request = request;
+	}
 
-		this.globalMemory = globalMemory;
-		this.localMemory = localMemory;
+	public boolean isRequest() {
+		return request;
+	}
+
+	public Object getData() {
+		return data;
+	}
+
+	public Throwable getCause() {
+		return cause;
+	}
+
+	public long getId() {
+		return id;
 	}
 }

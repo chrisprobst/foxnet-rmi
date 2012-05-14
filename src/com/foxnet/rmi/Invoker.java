@@ -32,21 +32,47 @@
 package com.foxnet.rmi;
 
 import java.lang.reflect.Method;
+import java.util.Map;
 
 import com.foxnet.rmi.binding.RemoteBinding;
 
 /**
  * @author Christopher Probst
  */
-public interface Invoker {
+public abstract class Invoker {
 
-	Connection getConnection();
+	private final Connection connection;
+	private final String target;
+	private final RemoteBinding remoteBinding;
+	private final Object proxy;
 
-	Method getMethod(String methodName);
+	protected Invoker(Connection connection, String target,
+			RemoteBinding remoteBinding) {
+		
+		
+		this.connection = connection;
+		this.target = target;
+		this.remoteBinding = remoteBinding;
+		proxy = null;
+	}
 
-	String getTarget();
+	public Connection getConnection() {
+		return connection;
+	}
 
-	RemoteBinding getRemoteBinding();
+	public String getTarget() {
+		return target;
+	}
+
+	public RemoteBinding getRemoteBinding() {
+		return remoteBinding;
+	}
+
+	public Object getProxy() {
+		return proxy;
+	}
 
 	Invocation invoke(String methodName, Object... args);
+
+	Map<String, Method> getMethods();
 }

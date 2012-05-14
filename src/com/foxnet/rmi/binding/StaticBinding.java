@@ -31,7 +31,6 @@
  */
 package com.foxnet.rmi.binding;
 
-import com.foxnet.rmi.Remote;
 
 /**
  * This class represents a static local binding.

@@ -13,7 +13,7 @@
  *   notice, this list of conditions and the following disclaimer in the
  *   documentation and/or other materials provided with the distribution.
  *
- * * Neither the name of the 'FoxNet RMI' nor the names of its 
+ * * Neither the name of the 'FoxNet Codec' nor the names of its 
  *   contributors may be used to endorse or promote products derived
  *   from this software without specific prior written permission.
  *
@@ -29,35 +29,19 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.foxnet.rmi;
+package com.foxnet.rmi.binding;
 
-import java.io.Serializable;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * 
  * @author Christopher Probst
- * 
  */
-public final class ThreadUsage implements Serializable {
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface OrderedExecution {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-
-	public static final ThreadUsage DEFAULT = new ThreadUsage(Runtime
-			.getRuntime().availableProcessors() * 2, 16);
-
-	public final int networkThreads, invocationThreads;
-
-	public ThreadUsage(int networkThreads, int invocationThreads) {
-		if (networkThreads < 1) {
-			throw new IllegalArgumentException("networkThreads must be > 0");
-		} else if (invocationThreads < 1) {
-			throw new IllegalArgumentException("invocationThreads must be > 0");
-		}
-
-		this.networkThreads = networkThreads;
-		this.invocationThreads = invocationThreads;
-	}
+	boolean value() default true;
 }

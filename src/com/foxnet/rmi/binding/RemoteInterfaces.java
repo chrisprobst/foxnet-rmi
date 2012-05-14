@@ -29,7 +29,7 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.foxnet.rmi;
+package com.foxnet.rmi.binding;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -43,5 +43,5 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface RemoteInterfaces {
 
-    Class<?>[] value() default {};
+	Class<?>[] value() default {};
 }

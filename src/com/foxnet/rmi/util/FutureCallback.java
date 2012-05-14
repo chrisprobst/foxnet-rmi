@@ -31,67 +31,12 @@
  */
 package com.foxnet.rmi.util;
 
-import java.io.IOException;
-import java.io.OutputStream;
-
 /**
  * 
  * @author Christopher Probst
- * 
- * @param <T>
+ * @see Future
  */
-public final class WrapperOutputStream<T extends OutputStream> extends
-		OutputStream {
+public interface FutureCallback {
 
-	private T output;
-
-	public WrapperOutputStream() {
-		this(null);
-	}
-
-	public WrapperOutputStream(T output) {
-		setOutput(output);
-	}
-
-	@Override
-	public void write(byte[] b, int off, int len) throws IOException {
-		output.write(b, off, len);
-	}
-
-	@Override
-	public void write(int b) throws IOException {
-		output.write(b);
-	}
-
-	@Override
-	public void write(byte[] b) throws IOException {
-		output.write(b);
-	}
-
-	@Override
-	public void flush() throws IOException {
-		output.flush();
-	}
-
-	@Override
-	public void close() throws IOException {
-		try {
-			output.flush();
-		} catch (Exception ignored) {
-		}
-		output.close();
-	}
-
-	public T setOutput(T output) {
-		T oldOutput = this.output;
-		this.output = output;
-		return oldOutput;
-	}
-
-	/**
-	 * @return the underlying output stream.
-	 */
-	public T getOutput() {
-		return output;
-	}
+	void completed(Future future) throws Exception;
 }

@@ -29,13 +29,50 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.foxnet.rmi;
+package com.foxnet.rmi.transport.network.handler.setup;
 
-import java.io.Serializable;
+import org.jboss.netty.channel.ChannelHandler.Sharable;
+import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ChannelStateEvent;
+import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import org.jboss.netty.channel.socket.SocketChannelConfig;
 
 /**
+ * 
  * @author Christopher Probst
+ * 
  */
-public interface Remote extends Serializable {
+@Sharable
+public final class SetupHandler extends SimpleChannelUpstreamHandler {
 
+	public static final SetupHandler INSTANCE = new SetupHandler();
+
+	/**
+	 * The socket send buffer capacity.
+	 */
+	public static final int SOCKET_SEND_BUFFER_CAPACITY = 0xFFFF;
+
+	/**
+	 * The socket receive buffer capacity.
+	 */
+	public static final int SOCKET_RECV_BUFFER_CAPACITY = 0xFFFF;
+
+	@Override
+	public void channelOpen(ChannelHandlerContext ctx, ChannelStateEvent e)
+			throws Exception {
+
+		// Get the socket config
+		SocketChannelConfig cfg = (SocketChannelConfig) ctx.getChannel()
+				.getConfig();
+
+		// Set both the send and recv buffer
+		cfg.setSendBufferSize(SOCKET_SEND_BUFFER_CAPACITY);
+		cfg.setReceiveBufferSize(SOCKET_RECV_BUFFER_CAPACITY);
+
+		// Deactivate the tcp delay
+		cfg.setTcpNoDelay(true);
+
+		// Super
+		super.channelOpen(ctx, e);
+	}
 }

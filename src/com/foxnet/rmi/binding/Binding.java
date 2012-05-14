@@ -32,7 +32,9 @@
 package com.foxnet.rmi.binding;
 
 import java.lang.reflect.Method;
-import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -41,7 +43,7 @@ import java.util.TreeMap;
  * 
  * @author Christopher Probst
  */
-public abstract class Binding extends RemoteObject implements Iterable<Method> {
+public abstract class Binding extends RemoteObject {
 
 	/**
 	 * 
@@ -49,7 +51,7 @@ public abstract class Binding extends RemoteObject implements Iterable<Method> {
 	private static final long serialVersionUID = 1L;
 
 	// All interface methods (ordered by name)
-	private final Method[] methods;
+	private final List<Method> methods;
 
 	/**
 	 * Creates a new binding.
@@ -93,48 +95,22 @@ public abstract class Binding extends RemoteObject implements Iterable<Method> {
 			}
 		}
 
+		// Stop here... We need methods!!
+		if (methodMap.isEmpty()) {
+			throw new IllegalArgumentException("The given interfaces "
+					+ "do not have any methods");
+		}
+
 		// Get array
-		methods = methodMap.values().toArray(new Method[methodMap.size()]);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see java.lang.Iterable#iterator()
-	 */
-	@Override
-	public Iterator<Method> iterator() {
-		return new Iterator<Method>() {
-
-			/*
-			 * Used to iterator over the methods.
-			 */
-			private int index = 0;
-
-			@Override
-			public void remove() {
-				throw new UnsupportedOperationException("Final array");
-			}
-
-			@Override
-			public Method next() {
-				// Get and increase
-				return getMethod(index++);
-			}
-
-			@Override
-			public boolean hasNext() {
-				// Check next index
-				return containsMethodId(index);
-			}
-		};
+		methods = Collections.unmodifiableList(new ArrayList<Method>(methodMap
+				.values()));
 	}
 
 	/**
-	 * @return the method count.
+	 * @return the list which contains all methods.
 	 */
-	public int getMethodCount() {
-		return methods.length;
+	public List<Method> getMethods() {
+		return methods;
 	}
 
 	/**
@@ -145,22 +121,7 @@ public abstract class Binding extends RemoteObject implements Iterable<Method> {
 	 * @return true if the id is valid, otherwise false.
 	 */
 	public boolean containsMethodId(int methodId) {
-		return methodId >= 0 && methodId < methods.length;
-	}
-
-	/**
-	 * @param methodId
-	 *            The method id you want to lookup.
-	 * @return the method with the given method id.
-	 */
-	public Method getMethod(int methodId) {
-		// Index out of bounds
-		if (!containsMethodId(methodId)) {
-			throw new IllegalArgumentException("Method id (" + methodId
-					+ ") does not exist");
-		}
-
-		return methods[methodId];
+		return methodId >= 0 && methodId < methods.size();
 	}
 
 	/**

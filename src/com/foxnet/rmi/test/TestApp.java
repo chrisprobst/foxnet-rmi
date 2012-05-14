@@ -31,70 +31,91 @@
  */
 package com.foxnet.rmi.test;
 
-import com.foxnet.rmi.Acceptor;
-import com.foxnet.rmi.Connection;
-import com.foxnet.rmi.Connector;
-import com.foxnet.rmi.Remote;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+
+import org.jboss.netty.channel.Channel;
+
+import com.foxnet.rmi.binding.LocalInterface;
+import com.foxnet.rmi.binding.OrderedExecution;
+import com.foxnet.rmi.binding.Remote;
+import com.foxnet.rmi.binding.StaticBinding;
+import com.foxnet.rmi.binding.registry.Registry;
+import com.foxnet.rmi.binding.registry.RegistryListener;
+import com.foxnet.rmi.transport.network.ConnectionManager;
+import com.foxnet.rmi.transport.network.handler.invocation.InvocationMessage;
+import com.foxnet.rmi.util.Future;
+import com.foxnet.rmi.util.FutureCallback;
+import com.foxnet.rmi.util.Request;
 
 /**
  * @author Christopher Probst
  */
 public class TestApp {
 
-	public static interface ChatListener extends Remote {
+	public static interface Service {
 
-		void onMessage(String user, String message);
+		@OrderedExecution
+		String get(int index);
 	}
 
-	public static interface ChatServer extends Remote {
-
-		void add(ChatListener listener);
-	}
-
-	public static class ChatProvider implements ChatServer {
+	public static class Test implements Service, Remote, RegistryListener {
+		@Override
+		public void boundTo(Registry<?> registry) throws Exception {
+			System.out.println("bound to: " + registry);
+		}
 
 		@Override
-		public void add(ChatListener listener) {
-			System.out.println("listener added. sending greeting...");
-			listener.onMessage("SERVER", "hello user");
+		public void unboundFrom(Registry<?> registry) throws Exception {
+			System.out.println("unbound from: " + registry);
 		}
-	}
-
-	public static class ChatReactor implements ChatListener {
 
 		@Override
-		public void onMessage(String user, String message) {
-			// TODO Auto-generated method stub
+		public String get(int index) {
 
+			try {
+				Thread.sleep((int) (Math.random() * 200));
+			} catch (Exception e) {
+				// TODO: handle exception
+			}
+
+			return "first message";
 		}
+
 	}
 
 	public static void main(String[] args) throws Exception {
 
-		// New acceptor
-		Acceptor acceptor = new Acceptor();
-		acceptor.open(1337);
-		acceptor.getStaticRegistry().bind("chat", new ChatProvider());
+		ConnectionManager servers = new ConnectionManager(true);
+		servers.openServer(1337);
 
-		// New connector
-		Connector connector = new Connector();
+		servers.getStaticRegistry().bind("test", new Test());
 
 		// Open connection
-		Connection rmi = connector.open("localhost", 1337);
+		ConnectionManager clients = new ConnectionManager(false);
+		Channel connection = clients.openClient("kr0e-pc", 1337)
+				.awaitUninterruptibly().getChannel();
 
-		ChatServer serv = (ChatServer) rmi.lookup("chat");
+		for (Class<?> c : servers.getStaticRegistry().get("test")
+				.getInterfaces()) {
+			System.out.println(c);
+		}
 
-		System.out.println("Chat obj looked up: " + serv.getClass());
+		for (int i = 0; i < 100; i++) {
+			final int j = i;
+			Request req = new Request(new InvocationMessage(false, 0, 0, j));
+			req.add(new FutureCallback() {
 
-		System.out.println(rmi.getStaticRegistry());
+				@Override
+				public void completed(Future future) throws Exception {
 
-		serv.add(new ChatListener() {
+					System.out.println(j + ". " + future.getAttachment());
+				}
+			});
 
-			@Override
-			public void onMessage(String user, String message) {
+			connection.write(req);
+		}
 
-				System.out.println(user + " told you: " + message);
-			}
-		});
 	}
 };

@@ -29,20 +29,25 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.foxnet.rmi.registry;
+package com.foxnet.rmi.binding.registry;
 
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
-import com.foxnet.rmi.Remote;
 import com.foxnet.rmi.binding.DynamicBinding;
+import com.foxnet.rmi.binding.Remote;
 import com.foxnet.rmi.binding.RemoteObject;
 
 /**
  * @author Christopher Probst
  */
 public final class DynamicRegistry extends Registry<DynamicBinding> {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 
 	// Used to store the ids
 	private final Map<Long, DynamicBinding> ids = new HashMap<Long, DynamicBinding>();
@@ -115,7 +120,7 @@ public final class DynamicRegistry extends Registry<DynamicBinding> {
 		return objects.get(target);
 	}
 
-	public Object replaceRemoteObject(Object target) {
+	public Object replaceRemote(Object target) {
 		if (!(target instanceof Remote)) {
 			return target;
 		}
@@ -124,11 +129,11 @@ public final class DynamicRegistry extends Registry<DynamicBinding> {
 		return new RemoteObject(bindIfAbsent((Remote) target));
 	}
 
-	public synchronized Object[] replaceRemoteObjects(Object[] arguments) {
+	public synchronized Object[] replaceRemotes(Object[] arguments) {
 		if (arguments != null) {
 			for (int i = 0; i < arguments.length; i++) {
 				// Get the reference
-				arguments[i] = replaceRemoteObject(arguments[i]);
+				arguments[i] = replaceRemote(arguments[i]);
 			}
 		}
 

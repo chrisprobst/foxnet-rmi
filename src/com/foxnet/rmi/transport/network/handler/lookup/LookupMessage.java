@@ -29,61 +29,23 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.foxnet.rmi.kernel;
+package com.foxnet.rmi.transport.network.handler.lookup;
 
-import java.lang.ref.SoftReference;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.io.Serializable;
 
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBufferOutputStream;
-import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.buffer.HeapChannelBufferFactory;
+final class LookupMessage implements Serializable {
 
-/**
- * 
- * @author Christopher Probst
- * 
- */
-public final class PooledOutputStreams {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	private final String target;
 
-	// Used to reuse already allocated buffers
-	private final Queue<SoftReference<ChannelBufferOutputStream>> buffers = new ConcurrentLinkedQueue<SoftReference<ChannelBufferOutputStream>>();
-
-	public ChannelBufferOutputStream acquireOutputStream(int capacity) {
-
-		// Poll the oldest ref
-		SoftReference<ChannelBufferOutputStream> ref = buffers.poll();
-
-		// Tmp
-		ChannelBufferOutputStream cbos;
-
-		if (ref == null || (cbos = ref.get()) == null) {
-			ChannelBuffer cb = ChannelBuffers.dynamicBuffer(capacity,
-					HeapChannelBufferFactory.getInstance());
-
-			// We always skip the first 4 bytes
-			cb.writerIndex(4);
-
-			// Create new channel buffer output stream
-			cbos = new ChannelBufferOutputStream(cb);
-		} else {
-			// Reset the reader index
-			cbos.buffer().readerIndex(0);
-
-			// We always skip the first 4 bytes
-			cbos.buffer().writerIndex(4);
-		}
-
-		return cbos;
+	public LookupMessage(String target) {
+		this.target = target;
 	}
 
-	public void releaseOutputStream(ChannelBufferOutputStream cbos) {
-		if (cbos == null) {
-			throw new NullPointerException("cbos");
-		}
-
-		// Queue a new soft reference to the channel buffer output stream
-		buffers.offer(new SoftReference<ChannelBufferOutputStream>(cbos));
+	public String getTarget() {
+		return target;
 	}
 }

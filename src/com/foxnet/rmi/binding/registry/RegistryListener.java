@@ -29,14 +29,16 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.foxnet.rmi;
+package com.foxnet.rmi.binding.registry;
+
+import com.foxnet.rmi.binding.LocalInterface;
 
 /**
- * 
  * @author Christopher Probst
- * 
  */
-public interface FutureCallback {
+public interface RegistryListener extends LocalInterface {
 
-	void completed(Future future) throws Exception;
+	void boundTo(Registry<?> registry) throws Exception;
+
+	void unboundFrom(Registry<?> registry) throws Exception;
 }
