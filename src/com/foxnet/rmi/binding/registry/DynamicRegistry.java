@@ -35,8 +35,8 @@ import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
+import com.foxnet.rmi.Remote;
 import com.foxnet.rmi.binding.DynamicBinding;
-import com.foxnet.rmi.binding.Remote;
 import com.foxnet.rmi.binding.RemoteObject;
 
 /**

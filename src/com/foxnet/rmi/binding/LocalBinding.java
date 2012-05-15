@@ -32,8 +32,6 @@
 package com.foxnet.rmi.binding;
 
 import java.io.Serializable;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -44,11 +42,10 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.logging.Logger;
 
-import com.foxnet.rmi.binding.registry.DynamicRegistry;
-import com.foxnet.rmi.binding.registry.ProxyManager;
-import com.foxnet.rmi.binding.registry.Registry;
-import com.foxnet.rmi.binding.registry.StaticRegistry;
-import com.foxnet.rmi.util.Future;
+import com.foxnet.rmi.LocalInterface;
+import com.foxnet.rmi.OrderedExecution;
+import com.foxnet.rmi.Remote;
+import com.foxnet.rmi.RemoteInterfaces;
 
 /**
  * This represents an abstract local binding.
@@ -316,175 +313,6 @@ public abstract class LocalBinding extends Binding {
 	 */
 	public Map<Integer, OrderedExecutionQueue> getOrderedExecutionQueues() {
 		return orderedExecutionQueues;
-	}
-
-	/**
-	 * Creates a runnable invocation. The arguments will be checked to be remote
-	 * objects and converted to proxies using the given {@link ProxyManager} if
-	 * necessary. The result will be stored in the given future. If you do not
-	 * specify a future, this method will check the the method you want to
-	 * invoke to be a void-method. If it is NOT a void-method an
-	 * {@link IllegalStateException} will be thrown. If the method returns a
-	 * {@link Remote} object the given dynamic registry will be used to generate
-	 * a dynamic remote object.
-	 * 
-	 * @param proxyManager
-	 *            The proxy manager.
-	 * @param staticRegistry
-	 *            The static registry which is used to lookup local objects
-	 *            (arguments).
-	 * @param dynamicRegistry
-	 *            The dynamic registry which is used to replace {@link Remote}
-	 *            return-values.
-	 * @param future
-	 *            The future object which will be notified asynchronously.
-	 * @param methodId
-	 *            The method id of the method you want to invoke.
-	 * @param args
-	 *            The arguments of the invocation.
-	 * @return a runnable object.
-	 * @throws IllegalStateException
-	 *             If the future is null and the method returns a non-void
-	 *             value.
-	 */
-	public Runnable createInvocation(final ProxyManager proxyManager,
-			final StaticRegistry staticRegistry,
-			final DynamicRegistry dynamicRegistry, final Future future,
-			int methodId, final Object... args) throws IllegalStateException {
-		if (proxyManager == null) {
-			throw new NullPointerException("proxyManager");
-		} else if (dynamicRegistry == null) {
-			throw new NullPointerException("dynamicRegistry");
-		}
-
-		// Check if method id does not exist...
-		if (!containsMethodId(methodId)) {
-
-			// Create message
-			String msg = "Method id (" + methodId + ") does not exist";
-
-			// Log
-			logger.warning(msg);
-
-			// Fail the future...
-			if (future != null) {
-
-				// Fail
-				future.fail(new IllegalArgumentException(msg));
-			}
-
-			return null;
-		} else {
-
-			// Get final method from binding!
-			final Method method = getMethods().get(methodId);
-
-			/*
-			 * Check the return value and the future.
-			 */
-			if (method.getReturnType() != void.class && future == null) {
-				throw new IllegalStateException("The method does return a "
-						+ "non-void value but you have non specified a future");
-			}
-
-			// Create a new invocation runnable
-			return new Runnable() {
-
-				@Override
-				public void run() {
-					try {
-						/*
-						 * Resolve all remote objects.
-						 */
-						for (int i = 0; i < args.length; i++) {
-							// Replace remote object
-							args[i] = proxyManager.replaceRemoteObject(args[i]);
-
-							// Replace local object
-							args[i] = Registry.replaceLocalObject(
-									staticRegistry, dynamicRegistry, args[i]);
-						}
-
-						// Invoke the method
-						Object result = method.invoke(target, args);
-
-						// Do we send back a known proxy ?
-						result = proxyManager.replaceProxy(result);
-
-						// Do we send back a remote ?
-						result = dynamicRegistry.replaceRemote(result);
-
-						// Succeed the future with the filtered result
-						future.succeed(result);
-					} catch (InvocationTargetException e) {
-						// Short log...
-						logger.warning("Declared throwable catched: "
-								+ e.getCause());
-
-						if (future != null) {
-							// Fail
-							future.fail(e);
-						}
-					} catch (Throwable e) {
-						// Short log...
-						logger.warning("Failed to invoke method. Reason: "
-								+ e.getMessage());
-
-						if (future != null) {
-							// Fail
-							future.fail(e);
-						}
-					}
-				}
-			};
-		}
-	}
-
-	/**
-	 * Creates and invoke a runnable invocation. The arguments will be checked
-	 * to be remote objects and converted to proxies using the given
-	 * {@link ProxyManager} if necessary. The result will be stored in the given
-	 * future. If you do not specify a future, this method will check the the
-	 * method you want to invoke to be a void-method. If it is NOT a void-method
-	 * an {@link IllegalStateException} will be thrown. If the method returns a
-	 * {@link Remote} object the given dynamic registry will be used to generate
-	 * a dynamic remote object.
-	 * 
-	 * @param executor
-	 *            The executor of the invocation.
-	 * @param proxyManager
-	 *            The proxy manager.
-	 * @param staticRegistry
-	 *            The static registry which is used to lookup local objects
-	 *            (arguments).
-	 * @param dynamicRegistry
-	 *            The dynamic registry which is used to replace {@link Remote}
-	 *            return-values.
-	 * @param future
-	 *            The future object which will be notified asynchronously.
-	 * @param methodId
-	 *            The method id of the method you want to invoke.
-	 * @param args
-	 *            The arguments of the invocation.
-	 * @return a runnable object.
-	 * @throws IllegalStateException
-	 *             If the future is null and the method returns a non-void
-	 *             value.
-	 */
-	public void invoke(Executor executor, ProxyManager proxyManager,
-			StaticRegistry staticRegistry, DynamicRegistry dynamicRegistry,
-			Future future, int methodId, Object... args)
-			throws IllegalStateException {
-
-		/*
-		 * Create a new invocation and execute it using the given method
-		 * context.
-		 */
-		executeInMethodContext(
-				executor,
-				methodId,
-				createInvocation(proxyManager, staticRegistry, dynamicRegistry,
-						future, methodId, args));
 	}
 
 	/**

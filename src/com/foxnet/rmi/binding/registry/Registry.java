@@ -38,13 +38,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Executor;
 import java.util.logging.Logger;
 
+import com.foxnet.rmi.Remote;
 import com.foxnet.rmi.binding.LocalBinding;
-import com.foxnet.rmi.binding.LocalObject;
-import com.foxnet.rmi.binding.Remote;
-import com.foxnet.rmi.util.Future;
 
 /**
  * This class represents a simple abstract registry of bindings.
@@ -53,158 +50,6 @@ import com.foxnet.rmi.util.Future;
  */
 public abstract class Registry<B extends LocalBinding> implements Iterable<B>,
 		Serializable {
-
-	// Used to log infos, warnings or messages
-	protected static final Logger STATIC_LOGGER = Logger
-			.getLogger(Registry.class.getName());
-
-	public static Object replaceLocalObject(StaticRegistry staticRegistry,
-			DynamicRegistry dynamicRegistry, Object localObject) {
-
-		// Not for us...
-		if (!(localObject instanceof LocalObject)) {
-			return localObject;
-		}
-
-		// Convert
-		LocalObject tmp = (LocalObject) localObject;
-
-		// Lookup the target
-		LocalBinding target;
-		if (tmp.isDynamic()) {
-			target = dynamicRegistry.get(tmp.getId());
-		} else {
-			target = staticRegistry.get(tmp.getId());
-		}
-
-		// Check the target
-		if (target == null) {
-			throw new IllegalArgumentException("The local argument object "
-					+ "is not part of the given registries");
-		} else {
-			// Otherwise replace with real target
-			return target.getTarget();
-		}
-	}
-
-	/**
-	 * Tries to find the given binding and creates and invoke a runnable
-	 * invocation directly. The arguments will be checked to be remote objects
-	 * and converted to proxies using the given {@link ProxyManager} if
-	 * necessary. The result will be stored in the given future. If you do not
-	 * specify a future, this method will check the the method you want to
-	 * invoke to be a void-method. If it is NOT a void-method an
-	 * {@link IllegalStateException} will be thrown. If the method returns a
-	 * {@link Remote} object the given dynamic registry will be used to generate
-	 * a dynamic remote object.
-	 * 
-	 * @param dynamic
-	 *            The dynamic flag (where to search the binding).
-	 * @param bindingId
-	 *            The binding id.
-	 * @param proxyManager
-	 *            The proxy manager.
-	 * @param staticRegistry
-	 *            The static registry which is used to lookup local objects
-	 *            (arguments).
-	 * @param dynamicRegistry
-	 *            The dynamic registry which is used to find the binding and to
-	 *            replace {@link Remote} return-values.
-	 * @param future
-	 *            The future object which will be notified asynchronously.
-	 * @param methodId
-	 *            The method id of the method you want to invoke.
-	 * @param args
-	 *            The arguments of the invocation.
-	 * @return a runnable object.
-	 * @throws IllegalStateException
-	 *             If the future is null and the method returns a non-void
-	 *             value.
-	 */
-	public static void invoke(boolean dynamic, long bindingId,
-			ProxyManager proxyManager, StaticRegistry staticRegistry,
-			DynamicRegistry dynamicRegistry, Future future, int methodId,
-			Object... args) throws IllegalStateException {
-		invoke(dynamic, bindingId, null, proxyManager, staticRegistry,
-				dynamicRegistry, future, methodId, args);
-	}
-
-	/**
-	 * Tries to find the given binding and creates and invoke a runnable
-	 * invocation. The arguments will be checked to be remote objects and
-	 * converted to proxies using the given {@link ProxyManager} if necessary.
-	 * The result will be stored in the given future. If you do not specify a
-	 * future, this method will check the the method you want to invoke to be a
-	 * void-method. If it is NOT a void-method an {@link IllegalStateException}
-	 * will be thrown. If the method returns a {@link Remote} object the given
-	 * dynamic registry will be used to generate a dynamic remote object.
-	 * 
-	 * @param dynamic
-	 *            The dynamic flag (where to search the binding).
-	 * @param bindingId
-	 *            The binding id.
-	 * @param executor
-	 *            The executor of the invocation.
-	 * @param proxyManager
-	 *            The proxy manager.
-	 * @param staticRegistry
-	 *            The static registry which is used to lookup local objects
-	 *            (arguments).
-	 * @param dynamicRegistry
-	 *            The dynamic registry which is used to find the binding and to
-	 *            replace {@link Remote} return-values.
-	 * @param future
-	 *            The future object which will be notified asynchronously.
-	 * @param methodId
-	 *            The method id of the method you want to invoke.
-	 * @param args
-	 *            The arguments of the invocation.
-	 * @return a runnable object.
-	 * @throws IllegalStateException
-	 *             If the future is null and the method returns a non-void
-	 *             value.
-	 */
-	public static void invoke(boolean dynamic, long bindingId,
-			Executor executor, ProxyManager proxyManager,
-			StaticRegistry staticRegistry, DynamicRegistry dynamicRegistry,
-			Future future, int methodId, Object... args)
-			throws IllegalStateException {
-
-		if (staticRegistry == null) {
-			throw new NullPointerException("staticRegistry");
-		} else if (dynamicRegistry == null) {
-			throw new NullPointerException("dynamicRegistry");
-		}
-
-		// Helper var
-		LocalBinding binding;
-		if (dynamic) {
-			binding = dynamicRegistry.get(bindingId);
-		} else {
-			binding = staticRegistry.get(bindingId);
-		}
-
-		// Check the binding
-		if (binding == null) {
-			// Create message
-			String msg = "Requested binding with id (" + bindingId
-					+ ") does not exist";
-
-			// Log
-			STATIC_LOGGER.warning(msg);
-
-			// Fail if future exists...
-			if (future != null) {
-
-				// Fail
-				future.fail(new IllegalArgumentException(msg));
-			}
-		} else {
-			// Transfer the request to the binding
-			binding.invoke(executor, proxyManager, staticRegistry,
-					dynamicRegistry, future, methodId, args);
-		}
-	}
 
 	/**
 	 * 

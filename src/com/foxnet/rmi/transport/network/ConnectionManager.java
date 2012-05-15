@@ -60,7 +60,7 @@ import org.jboss.netty.handler.codec.serialization.ObjectEncoder;
 import org.jboss.netty.util.internal.ExecutorUtil;
 
 import com.foxnet.rmi.binding.registry.StaticRegistry;
-import com.foxnet.rmi.transport.network.handler.invocation.InvocationHandler;
+import com.foxnet.rmi.transport.network.handler.invocation.InvokerHandler;
 import com.foxnet.rmi.transport.network.handler.lookup.LookupHandler;
 import com.foxnet.rmi.transport.network.handler.reqres.ReqResHandler;
 import com.foxnet.rmi.transport.network.handler.setup.SetupHandler;
@@ -208,12 +208,15 @@ public final class ConnectionManager implements ChannelPipelineFactory {
 		}
 	}
 
-	public ChannelFuture openClient(String host, int port) throws IOException {
-		return openClient(new InetSocketAddress(host, port));
+	public Channel openClient(String host, int port) throws IOException {
+		return openClientAsync(host, port).awaitUninterruptibly().getChannel();
 	}
 
-	public ChannelFuture openClient(SocketAddress socketAddress)
-			throws IOException {
+	public ChannelFuture openClientAsync(String host, int port) {
+		return openClientAsync(new InetSocketAddress(host, port));
+	}
+
+	public ChannelFuture openClientAsync(SocketAddress socketAddress) {
 		if (!isSupportingClients()) {
 			throw new IllegalStateException("This connection manager "
 					+ "does not support clients");
@@ -223,12 +226,11 @@ public final class ConnectionManager implements ChannelPipelineFactory {
 		return clientBootstrap.connect(socketAddress);
 	}
 
-	public ServerChannel openServer(int port) throws IOException {
+	public ServerChannel openServer(int port) {
 		return openServer(new InetSocketAddress(port));
 	}
 
-	public ServerChannel openServer(SocketAddress socketAddress)
-			throws IOException {
+	public ServerChannel openServer(SocketAddress socketAddress) {
 		if (!isSupportingServers()) {
 			throw new IllegalStateException("This connection manager "
 					+ "does not support servers");
@@ -263,7 +265,7 @@ public final class ConnectionManager implements ChannelPipelineFactory {
 		channelPipeline.addLast("lookup", LookupHandler.INSTANCE);
 
 		// Handle invocations
-		channelPipeline.addLast("invocator", new InvocationHandler());
+		channelPipeline.addLast("invocator", new InvokerHandler());
 
 		return channelPipeline;
 	}

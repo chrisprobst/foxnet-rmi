@@ -31,91 +31,29 @@
  */
 package com.foxnet.rmi.test;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-
 import org.jboss.netty.channel.Channel;
 
-import com.foxnet.rmi.binding.LocalInterface;
-import com.foxnet.rmi.binding.OrderedExecution;
-import com.foxnet.rmi.binding.Remote;
-import com.foxnet.rmi.binding.StaticBinding;
-import com.foxnet.rmi.binding.registry.Registry;
-import com.foxnet.rmi.binding.registry.RegistryListener;
+import com.foxnet.rmi.InvokerFactory;
 import com.foxnet.rmi.transport.network.ConnectionManager;
-import com.foxnet.rmi.transport.network.handler.invocation.InvocationMessage;
-import com.foxnet.rmi.util.Future;
-import com.foxnet.rmi.util.FutureCallback;
-import com.foxnet.rmi.util.Request;
+import com.foxnet.rmi.transport.network.handler.invocation.InvokerHandler;
 
 /**
  * @author Christopher Probst
  */
 public class TestApp {
 
-	public static interface Service {
-
-		@OrderedExecution
-		String get(int index);
-	}
-
-	public static class Test implements Service, Remote, RegistryListener {
-		@Override
-		public void boundTo(Registry<?> registry) throws Exception {
-			System.out.println("bound to: " + registry);
-		}
-
-		@Override
-		public void unboundFrom(Registry<?> registry) throws Exception {
-			System.out.println("unbound from: " + registry);
-		}
-
-		@Override
-		public String get(int index) {
-
-			try {
-				Thread.sleep((int) (Math.random() * 200));
-			} catch (Exception e) {
-				// TODO: handle exception
-			}
-
-			return "first message";
-		}
-
-	}
-
 	public static void main(String[] args) throws Exception {
 
 		ConnectionManager servers = new ConnectionManager(true);
 		servers.openServer(1337);
 
-		servers.getStaticRegistry().bind("test", new Test());
+		// servers.getStaticRegistry().bind("server", server);
 
 		// Open connection
 		ConnectionManager clients = new ConnectionManager(false);
-		Channel connection = clients.openClient("kr0e-pc", 1337)
-				.awaitUninterruptibly().getChannel();
+		Channel connection = clients.openClient("kr0e-pc", 1337);
 
-		for (Class<?> c : servers.getStaticRegistry().get("test")
-				.getInterfaces()) {
-			System.out.println(c);
-		}
-
-		for (int i = 0; i < 100; i++) {
-			final int j = i;
-			Request req = new Request(new InvocationMessage(false, 0, 0, j));
-			req.add(new FutureCallback() {
-
-				@Override
-				public void completed(Future future) throws Exception {
-
-					System.out.println(j + ". " + future.getAttachment());
-				}
-			});
-
-			connection.write(req);
-		}
+		InvokerFactory fac = InvokerHandler.of(connection);
 
 	}
 };

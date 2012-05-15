@@ -38,7 +38,7 @@ package com.foxnet.rmi.binding;
  * @author Christopher Probst
  * 
  */
-public class LocalObject extends IdObject {
+public final class LocalObject extends IdObject {
 
 	/**
 	 * 

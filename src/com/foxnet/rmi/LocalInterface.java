@@ -1,4 +1,4 @@
-package com.foxnet.rmi.binding;
+package com.foxnet.rmi;
 
 public interface LocalInterface {
 }

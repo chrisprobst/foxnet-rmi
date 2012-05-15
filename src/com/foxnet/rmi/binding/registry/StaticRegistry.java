@@ -34,7 +34,7 @@ package com.foxnet.rmi.binding.registry;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.foxnet.rmi.binding.Remote;
+import com.foxnet.rmi.Remote;
 import com.foxnet.rmi.binding.StaticBinding;
 
 /**

@@ -31,7 +31,7 @@
  */
 package com.foxnet.rmi.binding.registry;
 
-import com.foxnet.rmi.binding.LocalInterface;
+import com.foxnet.rmi.LocalInterface;
 
 /**
  * @author Christopher Probst

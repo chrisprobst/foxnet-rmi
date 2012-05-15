@@ -1,78 +1,123 @@
-/*
- * Copyright (C) 2011 Christopher Probst
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * * Redistributions of source code must retain the above copyright
- *   notice, this list of conditions and the following disclaimer.
- *
- * * Redistributions in binary form must reproduce the above copyright
- *   notice, this list of conditions and the following disclaimer in the
- *   documentation and/or other materials provided with the distribution.
- *
- * * Neither the name of the 'FoxNet RMI' nor the names of its 
- *   contributors may be used to endorse or promote products derived
- *   from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
- * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
- * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
 package com.foxnet.rmi;
 
+import java.io.IOException;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
-import java.util.Map;
+import java.lang.reflect.Proxy;
 
 import com.foxnet.rmi.binding.RemoteBinding;
+import com.foxnet.rmi.binding.registry.DynamicRegistry;
+import com.foxnet.rmi.binding.registry.StaticRegistry;
 
-/**
- * @author Christopher Probst
- */
-public abstract class Invoker {
+public abstract class Invoker implements InvokerFactory, InvocationHandler {
 
-	private final Connection connection;
-	private final String target;
+	public static Invoker getInvokerOf(Object proxy) {
+		// Check to be a proxy class
+		if (proxy == null || !Proxy.isProxyClass(proxy.getClass())) {
+			return null;
+		} else {
+			// Try to get the handler
+			InvocationHandler handler = Proxy.getInvocationHandler(proxy);
+
+			// Conditional return...
+			return handler instanceof Invoker ? (Invoker) handler : null;
+		}
+	}
+
+	private final InvokerFactory invokerFactory;
 	private final RemoteBinding remoteBinding;
-	private final Object proxy;
+	private volatile long proxyInvocationTimeout;
+	private volatile Object lazyProxy;
 
-	protected Invoker(Connection connection, String target,
-			RemoteBinding remoteBinding) {
-		
-		
-		this.connection = connection;
-		this.target = target;
+	protected Invoker(InvokerFactory invokerFactory, RemoteBinding remoteBinding) {
+		if (invokerFactory == null) {
+			throw new NullPointerException("invokerFactory");
+		} else if (remoteBinding == null) {
+			throw new NullPointerException("remoteBinding");
+		}
+		this.invokerFactory = invokerFactory;
 		this.remoteBinding = remoteBinding;
-		proxy = null;
 	}
 
-	public Connection getConnection() {
-		return connection;
+	public long getProxyInvocationTimeout() {
+		return proxyInvocationTimeout;
 	}
 
-	public String getTarget() {
-		return target;
+	public void setProxyInvocationTimeout(long proxyInvocationTimeout) {
+		this.proxyInvocationTimeout = proxyInvocationTimeout;
+	}
+
+	public InvokerFactory getInvokerFactory() {
+		return invokerFactory;
 	}
 
 	public RemoteBinding getRemoteBinding() {
 		return remoteBinding;
 	}
 
-	public Object getProxy() {
-		return proxy;
+	@Override
+	public Invoker invoker(RemoteBinding remoteBinding) {
+		return invokerFactory.invoker(remoteBinding);
 	}
 
-	Invocation invoke(String methodName, Object... args);
+	@Override
+	public StaticRegistry getStaticRegistry() {
+		return invokerFactory.getStaticRegistry();
+	}
 
-	Map<String, Method> getMethods();
+	@Override
+	public DynamicRegistry getDynamicRegistry() {
+		return invokerFactory.getDynamicRegistry();
+	}
+
+	@Override
+	public Object lookupProxy(String target) throws IOException {
+		return invokerFactory.lookupProxy(target);
+	}
+
+	@Override
+	public Invoker lookupInvoker(String target) throws IOException {
+		return invokerFactory.lookupInvoker(target);
+	}
+
+	public abstract Invocation invoke(int methodId, Object... args);
+
+	@Override
+	public Object invoke(Object proxy, Method method, Object[] args)
+			throws Throwable {
+
+		// Invoke the method remotely
+		Invocation invocation = invoke(method, args);
+
+		// Simply synchronize and return or throw
+		if (invocation.synchronize(proxyInvocationTimeout)) {
+			return invocation.getAttachment();
+		} else {
+			throw invocation.getCause();
+		}
+	}
+
+	public Invocation invoke(Method method, Object... args) {
+		return invoke(remoteBinding.getMethodIds().get(method), args);
+	}
+
+	public Invocation invoke(String method, Object... args) {
+		return invoke(remoteBinding.getNameIds().get(method), args);
+	}
+
+	public Object getProxy() {
+		Object tmpProxy = lazyProxy;
+		if (tmpProxy == null) {
+			synchronized (this) {
+				tmpProxy = lazyProxy;
+				if (tmpProxy == null) {
+					lazyProxy = tmpProxy = Proxy.newProxyInstance(Thread
+							.currentThread().getContextClassLoader(),
+							remoteBinding.getInterfaces(), this);
+				}
+			}
+		}
+
+		return tmpProxy;
+	}
 }
