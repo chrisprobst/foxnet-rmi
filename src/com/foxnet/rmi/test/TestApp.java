@@ -31,29 +31,30 @@
  */
 package com.foxnet.rmi.test;
 
-import org.jboss.netty.channel.Channel;
-
-import com.foxnet.rmi.InvokerFactory;
-import com.foxnet.rmi.transport.network.ConnectionManager;
-import com.foxnet.rmi.transport.network.handler.invocation.InvokerHandler;
 
 /**
  * @author Christopher Probst
  */
 public class TestApp {
 
+	
+	
+	
 	public static void main(String[] args) throws Exception {
 
-		ConnectionManager servers = new ConnectionManager(true);
-		servers.openServer(1337);
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
 
-		// servers.getStaticRegistry().bind("server", server);
-
-		// Open connection
-		ConnectionManager clients = new ConnectionManager(false);
-		Channel connection = clients.openClient("kr0e-pc", 1337);
-
-		InvokerFactory fac = InvokerHandler.of(connection);
-
+		
 	}
 };
