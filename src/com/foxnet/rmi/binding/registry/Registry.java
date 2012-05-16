@@ -96,7 +96,7 @@ public abstract class Registry<B extends LocalBinding> implements Iterable<B>,
 
 	public abstract B unbind(long id);
 
-	public abstract void unbindAll();
+	public abstract Registry<B> unbindAll();
 
 	public synchronized B get(long id) {
 		return idBindings().get(id);

@@ -71,7 +71,7 @@ public final class DynamicRegistry extends Registry<DynamicBinding> {
 	 * @see com.foxnet.rmi.registry.Registry#unbindAll()
 	 */
 	@Override
-	public synchronized void unbindAll() {
+	public synchronized DynamicRegistry unbindAll() {
 		// Unbound all
 		for (Remote target : objects.keySet()) {
 			notifyTargetUnboundFrom(target);
@@ -80,6 +80,8 @@ public final class DynamicRegistry extends Registry<DynamicBinding> {
 		// Clear the remaining maps
 		objects.clear();
 		ids.clear();
+
+		return this;
 	}
 
 	/*

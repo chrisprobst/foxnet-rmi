@@ -91,8 +91,9 @@ public abstract class Invoker extends InvokerManager implements
 		return proxyTimeout;
 	}
 
-	public void proxyTimeout(long proxyTimeout) {
+	public Invoker proxyTimeout(long proxyTimeout) {
 		this.proxyTimeout = proxyTimeout;
+		return this;
 	}
 
 	public InvokerManager manager() {

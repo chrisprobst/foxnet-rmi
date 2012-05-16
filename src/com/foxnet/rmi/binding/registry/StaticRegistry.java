@@ -91,7 +91,7 @@ public final class StaticRegistry extends Registry<StaticBinding> {
 	 * @see com.foxnet.rmi.registry.Registry#unbindAll()
 	 */
 	@Override
-	public synchronized void unbindAll() {
+	public synchronized StaticRegistry unbindAll() {
 
 		// Clear id map
 		ids.clear();
@@ -104,6 +104,8 @@ public final class StaticRegistry extends Registry<StaticBinding> {
 
 		// Clear the names
 		names.clear();
+		
+		return this;
 	}
 
 	public synchronized StaticBinding get(String name) {
