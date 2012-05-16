@@ -58,10 +58,10 @@ public final class DynamicRegistry extends Registry<DynamicBinding> {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.foxnet.rmi.binding.registry.AbstractRegistry#getIndexMap()
+	 * @see com.foxnet.rmi.binding.registry.AbstractRegistry#idBindings()
 	 */
 	@Override
-	protected Map<Long, DynamicBinding> getIndexMap() {
+	protected Map<Long, DynamicBinding> idBindings() {
 		return ids;
 	}
 
@@ -94,10 +94,10 @@ public final class DynamicRegistry extends Registry<DynamicBinding> {
 
 		if (db != null) {
 			// Remove from object map
-			objects.remove(db.getTarget());
+			objects.remove(db.target());
 
 			// Notify
-			notifyTargetUnboundFrom(db.getTarget());
+			notifyTargetUnboundFrom(db.target());
 		}
 		return db;
 	}
@@ -108,10 +108,10 @@ public final class DynamicRegistry extends Registry<DynamicBinding> {
 
 		if (db != null) {
 			// Remove from id map
-			ids.remove(db.getId());
+			ids.remove(db.id());
 
 			// Notify
-			notifyTargetUnboundFrom(db.getTarget());
+			notifyTargetUnboundFrom(db.target());
 		}
 		return db;
 	}
@@ -158,7 +158,7 @@ public final class DynamicRegistry extends Registry<DynamicBinding> {
 
 		// Put into maps
 		objects.put(target, binding);
-		ids.put(binding.getId(), binding);
+		ids.put(binding.id(), binding);
 
 		// Notify the target
 		notifyTargetBoundTo(target);

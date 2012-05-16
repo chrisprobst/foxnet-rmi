@@ -109,7 +109,7 @@ public abstract class Binding extends RemoteObject {
 	/**
 	 * @return the list which contains all methods.
 	 */
-	public List<Method> getMethods() {
+	public List<Method> methods() {
 		return methods;
 	}
 

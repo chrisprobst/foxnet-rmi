@@ -92,21 +92,21 @@ public abstract class Registry<B extends LocalBinding> implements Iterable<B>,
 		return nextId++;
 	}
 
-	protected abstract Map<Long, B> getIndexMap();
+	protected abstract Map<Long, B> idBindings();
 
 	public abstract B unbind(long id);
 
 	public abstract void unbindAll();
 
 	public synchronized B get(long id) {
-		return getIndexMap().get(id);
+		return idBindings().get(id);
 	}
 
-	public synchronized Set<B> getBindings() {
+	public synchronized Set<B> bindings() {
 		return new AbstractSet<B>() {
 
 			// Copy to array list
-			private final List<B> bindings = new ArrayList<B>(getIndexMap()
+			private final List<B> bindings = new ArrayList<B>(idBindings()
 					.values());
 
 			@Override
@@ -128,10 +128,10 @@ public abstract class Registry<B extends LocalBinding> implements Iterable<B>,
 	 */
 	@Override
 	public Iterator<B> iterator() {
-		return getBindings().iterator();
+		return bindings().iterator();
 	}
 
 	public synchronized int size() {
-		return getIndexMap().size();
+		return idBindings().size();
 	}
 }

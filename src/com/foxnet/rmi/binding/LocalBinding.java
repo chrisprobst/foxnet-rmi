@@ -287,9 +287,9 @@ public abstract class LocalBinding extends Binding {
 		Map<Integer, OrderedExecutionQueue> tmpOrderedExecutionQueues = null;
 
 		// Add all methods which
-		for (int i = 0, l = getMethods().size(); i < l; i++) {
+		for (int i = 0, l = methods().size(); i < l; i++) {
 			// Check if OrderedExecution is present...
-			if ((oe = getMethods().get(i).getAnnotation(OrderedExecution.class)) != null
+			if ((oe = methods().get(i).getAnnotation(OrderedExecution.class)) != null
 					&& oe.value()) {
 
 				// Lazy setup
@@ -311,7 +311,7 @@ public abstract class LocalBinding extends Binding {
 	 * @return the ordered execution queues linked to their method ids or null
 	 *         if this binding does not have any ordered executions.
 	 */
-	public Map<Integer, OrderedExecutionQueue> getOrderedExecutionQueues() {
+	public Map<Integer, OrderedExecutionQueue> orderedExecutionQueues() {
 		return orderedExecutionQueues;
 	}
 
@@ -367,7 +367,7 @@ public abstract class LocalBinding extends Binding {
 	/**
 	 * @return the remote target.
 	 */
-	public Remote getTarget() {
+	public Remote target() {
 		return target;
 	}
 

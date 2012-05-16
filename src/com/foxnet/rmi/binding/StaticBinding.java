@@ -86,7 +86,7 @@ public final class StaticBinding extends LocalBinding {
 	/**
 	 * @return the name.
 	 */
-	public String getName() {
+	public String name() {
 		return name;
 	}
 }

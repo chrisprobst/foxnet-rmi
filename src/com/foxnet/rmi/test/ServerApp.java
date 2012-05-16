@@ -5,7 +5,7 @@ import java.io.IOException;
 import org.jboss.netty.channel.Channel;
 
 import com.foxnet.rmi.Invoker;
-import com.foxnet.rmi.InvokerFactory;
+import com.foxnet.rmi.InvokerManager;
 import com.foxnet.rmi.Remote;
 import com.foxnet.rmi.transport.network.ConnectionManager;
 import com.foxnet.rmi.util.Future;
@@ -15,7 +15,7 @@ public class ServerApp implements ServerInterface, Remote {
 
 	@Override
 	public void dieLiefertNichtsZurueck() {
-
+		System.out.println("void  methode");
 	}
 
 	/**
@@ -41,11 +41,12 @@ public class ServerApp implements ServerInterface, Remote {
 
 		
 		// Lade the remote factory für diesen Kanel
-		InvokerFactory fac = InvokerServices.load().getFactory(channel);
+		InvokerManager fac = InvokerServices.load().getFactory(channel);
 
 		
 		Invoker invoker = fac.lookupInvoker("void-stuff");
 		
-		Future future = invoker.invoke("updateClient");
+		
+		Future future = invoker.invoke("dieLiefertNichtsZurueck");
 	}
 }

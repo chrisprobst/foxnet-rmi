@@ -56,10 +56,10 @@ public final class StaticRegistry extends Registry<StaticBinding> {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.foxnet.rmi.binding.registry.AbstractRegistry#getIndexMap()
+	 * @see com.foxnet.rmi.binding.registry.AbstractRegistry#idBindings()
 	 */
 	@Override
-	protected Map<Long, StaticBinding> getIndexMap() {
+	protected Map<Long, StaticBinding> idBindings() {
 		return ids;
 	}
 
@@ -76,10 +76,10 @@ public final class StaticRegistry extends Registry<StaticBinding> {
 
 		if (sb != null) {
 			// Remove from name map
-			names.remove(sb.getName());
+			names.remove(sb.name());
 
 			// Notify
-			notifyTargetUnboundFrom(sb.getTarget());
+			notifyTargetUnboundFrom(sb.target());
 		}
 
 		return sb;
@@ -99,7 +99,7 @@ public final class StaticRegistry extends Registry<StaticBinding> {
 		// Check life cycle objects
 		for (StaticBinding sb : names.values()) {
 			// Notify
-			notifyTargetUnboundFrom(sb.getTarget());
+			notifyTargetUnboundFrom(sb.target());
 		}
 
 		// Clear the names
@@ -116,10 +116,10 @@ public final class StaticRegistry extends Registry<StaticBinding> {
 
 		if (sb != null) {
 			// Remove from id map
-			ids.remove(sb.getId());
+			ids.remove(sb.id());
 
 			// Notify
-			notifyTargetUnboundFrom(sb.getTarget());
+			notifyTargetUnboundFrom(sb.target());
 		}
 
 		return sb;
@@ -133,7 +133,7 @@ public final class StaticRegistry extends Registry<StaticBinding> {
 		// Copy to array
 		int i = 0;
 		for (StaticBinding sb : ids.values()) {
-			names[i++] = sb.getName();
+			names[i++] = sb.name();
 		}
 
 		return names;
@@ -159,9 +159,9 @@ public final class StaticRegistry extends Registry<StaticBinding> {
 		binding = new StaticBinding(getNextId(), name, (Remote) target);
 
 		// Put into maps
-		ids.put(binding.getId(), binding);
-		names.put(binding.getName(), binding);
-		notifyTargetBoundTo(binding.getTarget());
+		ids.put(binding.id(), binding);
+		names.put(binding.name(), binding);
+		notifyTargetBoundTo(binding.target());
 
 		return null;
 	}
@@ -187,12 +187,12 @@ public final class StaticRegistry extends Registry<StaticBinding> {
 		if (binding != null) {
 
 			// Rebind would not make sense...
-			if (binding.getTarget() == target) {
+			if (binding.target() == target) {
 				return binding;
 			}
 
 			// Unbind the old binding
-			unbind(binding.getId());
+			unbind(binding.id());
 		}
 
 		// Create new binding
@@ -200,9 +200,9 @@ public final class StaticRegistry extends Registry<StaticBinding> {
 				(Remote) target);
 
 		// Put into maps
-		ids.put(newBinding.getId(), newBinding);
-		names.put(newBinding.getName(), newBinding);
-		notifyTargetBoundTo(newBinding.getTarget());
+		ids.put(newBinding.id(), newBinding);
+		names.put(newBinding.name(), newBinding);
+		notifyTargetBoundTo(newBinding.target());
 
 		return binding;
 	}

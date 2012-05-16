@@ -31,7 +31,6 @@
  */
 package com.foxnet.rmi.binding;
 
-
 /**
  * A remote object is basically an id with some interface classes.
  * 
@@ -54,7 +53,7 @@ public class RemoteObject extends IdObject {
 	 *            The object you want to copy.
 	 */
 	public RemoteObject(RemoteObject copy) {
-		this(copy.getId(), copy.getInterfaces());
+		this(copy.id(), copy.interfaces());
 	}
 
 	/**
@@ -73,7 +72,7 @@ public class RemoteObject extends IdObject {
 	/**
 	 * @return the interface classes.
 	 */
-	public Class<?>[] getInterfaces() {
+	public Class<?>[] interfaces() {
 		return interfaces;
 	}
 }
