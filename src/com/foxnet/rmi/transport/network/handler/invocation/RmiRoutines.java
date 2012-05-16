@@ -1,10 +1,14 @@
-package com.foxnet.rmi;
+package com.foxnet.rmi.transport.network.handler.invocation;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.concurrent.Executor;
 import java.util.logging.Logger;
 
+import com.foxnet.rmi.AsyncVoid;
+import com.foxnet.rmi.Invocation;
+import com.foxnet.rmi.Invoker;
+import com.foxnet.rmi.InvokerManager;
 import com.foxnet.rmi.binding.LocalBinding;
 import com.foxnet.rmi.binding.LocalObject;
 import com.foxnet.rmi.binding.RemoteBinding;
@@ -22,7 +26,7 @@ public class RmiRoutines {
 			.getLogger(Registry.class.getName());
 
 	public static Object replaceRemoteObjectWithProxy(
-			InvokerFactory invokerFactory, Object remoteObject,
+			InvokerManager invokerFactory, Object remoteObject,
 			long invocationTimeoutMillies) {
 
 		if (!(remoteObject instanceof RemoteObject)) {
@@ -33,40 +37,31 @@ public class RmiRoutines {
 		Invoker newInvoker = invokerFactory.invoker(new RemoteBinding(
 				(RemoteObject) remoteObject, true));
 
-		newInvoker.setProxyInvocationTimeout(invocationTimeoutMillies);
+		newInvoker.proxyTimeout(invocationTimeoutMillies);
 
-		return newInvoker.getProxy();
+		return newInvoker.proxy();
 	}
 
-	public static Object replaceProxyWithLocalObject(InvokerFactory owner,
+	public static Object replaceProxyWithLocalObject(InvokerManager owner,
 			Object proxy) {
 
 		// Try to get proxy invoker
 		Invoker invoker = Invoker.getInvokerOf(proxy);
 
 		// Obviously not a proxy which was created by us
-		if (invoker == null || !owner.equals(invoker.getInvokerFactory())) {
+		if (invoker == null || !owner.equals(invoker.manager())) {
 			return proxy;
 		} else {
 			// Get the remote binding
-			RemoteBinding remoteBinding = invoker.getRemoteBinding();
+			RemoteBinding remoteBinding = invoker.binding();
 
 			// Create a new local object based on the proxy
-			return new LocalObject(remoteBinding.getId(),
+			return new LocalObject(remoteBinding.id(),
 					remoteBinding.isDynamic());
 		}
 	}
 
-	public static Object[] remotesToLocals(InvokerFactory invokerFactory,
-			Object... remoteArguments) {
-		for (int i = 0; i < remoteArguments.length; i++) {
-			remoteArguments[i] = remoteToLocal(invokerFactory,
-					remoteArguments[i]);
-		}
-		return remoteArguments;
-	}
-
-	public static Object remoteToLocal(InvokerFactory invokerFactory,
+	public static Object remoteToLocal(InvokerManager invokerFactory,
 			Object remoteArgument) {
 		// Replace remote OR local object
 		return replaceLocalObject(
@@ -80,7 +75,7 @@ public class RmiRoutines {
 		AsyncVoid av;
 
 		// Get method...
-		Method method = invocation.getMethod();
+		Method method = invocation.method();
 
 		// Check for async void method
 		return method.getReturnType() == void.class
@@ -89,22 +84,14 @@ public class RmiRoutines {
 						.value());
 	}
 
-	public static Object[] localsToRemotes(InvokerFactory owner,
-			Object... localArguments) {
-		for (int i = 0; i < localArguments.length; i++) {
-			localArguments[i] = localToRemote(owner, localArguments[i]);
-		}
-		return localArguments;
-	}
-
-	public static Object localToRemote(InvokerFactory owner,
+	public static Object localToRemote(InvokerManager owner,
 			Object localArgument) {
 		// Do we send back a remote OR a known proxy ?
-		return owner.getDynamicRegistry().replaceRemote(
+		return owner.dynamically().replaceRemote(
 				replaceProxyWithLocalObject(owner, localArgument));
 	}
 
-	public static Object replaceLocalObject(InvokerFactory invokerFactory,
+	public static Object replaceLocalObject(InvokerManager invokerFactory,
 			Object localObject) {
 
 		// Not for us...
@@ -118,9 +105,9 @@ public class RmiRoutines {
 		// Lookup the target
 		LocalBinding target;
 		if (tmp.isDynamic()) {
-			target = invokerFactory.getDynamicRegistry().get(tmp.getId());
+			target = invokerFactory.dynamically().get(tmp.id());
 		} else {
-			target = invokerFactory.getStaticRegistry().get(tmp.getId());
+			target = invokerFactory.statically().get(tmp.id());
 		}
 
 		// Check the target
@@ -129,26 +116,26 @@ public class RmiRoutines {
 					+ "is not part of the given registries");
 		} else {
 			// Otherwise replace with real target
-			return target.getTarget();
+			return target.target();
 		}
 	}
 
 	public static void invoke(boolean dynamic, long bindingId,
-			InvokerFactory invokerFactory, Future future, int methodId,
+			InvokerManager invokerFactory, Future future, int methodId,
 			Object... args) throws IllegalStateException {
 		invoke(dynamic, bindingId, null, invokerFactory, future, methodId, args);
 	}
 
 	public static void invoke(boolean dynamic, long bindingId,
-			Executor executor, InvokerFactory invokerFactory, Future future,
+			Executor executor, InvokerManager invokerFactory, Future future,
 			int methodId, Object... args) throws IllegalStateException {
 
 		// Helper var
 		LocalBinding binding;
 		if (dynamic) {
-			binding = invokerFactory.getDynamicRegistry().get(bindingId);
+			binding = invokerFactory.dynamically().get(bindingId);
 		} else {
-			binding = invokerFactory.getStaticRegistry().get(bindingId);
+			binding = invokerFactory.statically().get(bindingId);
 		}
 
 		// Check the binding
@@ -173,7 +160,7 @@ public class RmiRoutines {
 	}
 
 	public static Runnable createInvocation(final LocalBinding localBinding,
-			final InvokerFactory invokerFactory, final Future future,
+			final InvokerManager invokerFactory, final Future future,
 			int methodId, final Object... args) throws IllegalStateException {
 		if (invokerFactory == null) {
 			throw new NullPointerException("invokerFactory");
@@ -201,7 +188,7 @@ public class RmiRoutines {
 		} else {
 
 			// Get final method from binding!
-			final Method method = localBinding.getMethods().get(methodId);
+			final Method method = localBinding.methods().get(methodId);
 
 			/*
 			 * Check the return value and the future.
@@ -220,10 +207,10 @@ public class RmiRoutines {
 						/*
 						 * Resolve all remote and local objects.
 						 */
-						remotesToLocals(invokerFactory, args);
+						invokerFactory.remotesToLocals(args);
 
 						// Invoke the method
-						Object result = method.invoke(localBinding.getTarget(),
+						Object result = method.invoke(localBinding.target(),
 								args);
 
 						if (future != null) {
@@ -255,7 +242,7 @@ public class RmiRoutines {
 	}
 
 	public static void invoke(Executor executor, LocalBinding localBinding,
-			InvokerFactory invokerFactory, Future future, int methodId,
+			InvokerManager invokerFactory, Future future, int methodId,
 			Object... args) throws IllegalStateException {
 
 		/*

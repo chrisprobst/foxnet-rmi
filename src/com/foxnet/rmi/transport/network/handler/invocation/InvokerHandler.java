@@ -13,8 +13,7 @@ import org.jboss.netty.channel.SimpleChannelHandler;
 
 import com.foxnet.rmi.Invocation;
 import com.foxnet.rmi.Invoker;
-import com.foxnet.rmi.InvokerFactory;
-import com.foxnet.rmi.RmiRoutines;
+import com.foxnet.rmi.InvokerManager;
 import com.foxnet.rmi.binding.RemoteBinding;
 import com.foxnet.rmi.binding.RemoteObject;
 import com.foxnet.rmi.binding.registry.DynamicRegistry;
@@ -32,7 +31,7 @@ public class InvokerHandler extends SimpleChannelHandler {
 
 		private final Channel channel;
 
-		public NetworkInvoker(Channel channel, InvokerFactory invokerFactory,
+		public NetworkInvoker(Channel channel, InvokerManager invokerFactory,
 				RemoteBinding remoteBinding) {
 			super(invokerFactory, remoteBinding);
 
@@ -47,14 +46,14 @@ public class InvokerHandler extends SimpleChannelHandler {
 		public Invocation invoke(int methodId, Object... args) {
 
 			// Convert
-			RmiRoutines.localsToRemotes(getInvokerFactory(), args);
+			localsToRemotes(args);
 
 			// Create invocation
-			final Invocation in = new Invocation(this, methodId, args);
+			final Invocation in = newInvocation(methodId, args);
 
 			// Create the message now
-			InvocationMessage invMsg = new InvocationMessage(getRemoteBinding()
-					.isDynamic(), getRemoteBinding().getId(), methodId, args);
+			InvocationMessage invMsg = new InvocationMessage(binding()
+					.isDynamic(), binding().id(), methodId, args);
 
 			if (!RmiRoutines.isAsyncVoid(in)) {
 				// Create request
@@ -67,7 +66,7 @@ public class InvokerHandler extends SimpleChannelHandler {
 
 					@Override
 					public void completed(Future future) throws Exception {
-						in.complete(future.getAttachment(), future.getCause());
+						in.complete(future.attachment(), future.cause());
 					}
 				});
 			} else {
@@ -89,9 +88,19 @@ public class InvokerHandler extends SimpleChannelHandler {
 	public void channelOpen(ChannelHandlerContext ctx, ChannelStateEvent e)
 			throws Exception {
 		final Channel c = ctx.getChannel();
-		ctx.setAttachment(new InvokerFactory() {
+		ctx.setAttachment(new InvokerManager() {
 
 			private final DynamicRegistry dr = new DynamicRegistry();
+
+			@Override
+			public Object remoteToLocal(Object argument) {
+				return RmiRoutines.remoteToLocal(this, argument);
+			}
+
+			@Override
+			public Object localToRemote(Object argument) {
+				return RmiRoutines.localToRemote(this, argument);
+			}
 
 			@Override
 			public Invoker invoker(RemoteBinding remoteBinding) {
@@ -99,12 +108,12 @@ public class InvokerHandler extends SimpleChannelHandler {
 			}
 
 			@Override
-			public StaticRegistry getStaticRegistry() {
+			public StaticRegistry statically() {
 				return ConnectionManager.of(c).getStaticRegistry();
 			}
 
 			@Override
-			public DynamicRegistry getDynamicRegistry() {
+			public DynamicRegistry dynamically() {
 				return dr;
 			}
 
@@ -116,27 +125,23 @@ public class InvokerHandler extends SimpleChannelHandler {
 				if (req.synchronize()) {
 
 					final RemoteBinding rb = new RemoteBinding(
-							(RemoteObject) req.getAttachment(), false);
+							(RemoteObject) req.attachment(), false);
 
 					return invoker(rb);
 
 				} else {
-					throw new IOException(req.getCause());
+					throw new IOException(req.cause());
 				}
 
 			}
 
-			@Override
-			public Object lookupProxy(String target) throws IOException {
-				return lookupInvoker(target).getProxy();
-			}
 		});
 
 		super.channelOpen(ctx, e);
 	}
 
-	public static InvokerFactory of(Channel channel) {
-		return (InvokerFactory) channel.getPipeline()
+	public static InvokerManager of(Channel channel) {
+		return (InvokerManager) channel.getPipeline()
 				.getContext(InvokerHandler.class).getAttachment();
 	}
 
@@ -162,7 +167,7 @@ public class InvokerHandler extends SimpleChannelHandler {
 
 		if (im != null) {
 			ConnectionManager cm = ConnectionManager.of(ctx.getChannel());
-			InvokerFactory fac = (InvokerFactory) ctx.getAttachment();
+			InvokerManager fac = (InvokerManager) ctx.getAttachment();
 			if (cm != null) {
 
 				// Do invocation

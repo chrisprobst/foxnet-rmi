@@ -66,7 +66,7 @@ public final class RemoteBinding extends Binding {
 	 *            The dynamic flag.
 	 */
 	public RemoteBinding(RemoteObject remoteObject, boolean dynamic) {
-		this(remoteObject.getId(), remoteObject.getInterfaces(), dynamic);
+		this(remoteObject.id(), remoteObject.interfaces(), dynamic);
 	}
 
 	/**
@@ -89,7 +89,7 @@ public final class RemoteBinding extends Binding {
 		int index = 0;
 		Map<Method, Integer> tmpMethodIds = new HashMap<Method, Integer>();
 		Map<String, Integer> tmpNameIds = new HashMap<String, Integer>();
-		for (Method method : getMethods()) {
+		for (Method method : methods()) {
 			tmpMethodIds.put(method, index);
 			tmpNameIds.put(method.getName(), index++);
 		}
@@ -112,14 +112,14 @@ public final class RemoteBinding extends Binding {
 	/**
 	 * @return the method-to-id map.
 	 */
-	public Map<Method, Integer> getMethodIds() {
+	public Map<Method, Integer> methodIds() {
 		return methodIds;
 	}
 
 	/**
 	 * @return the method-name-to-id map.
 	 */
-	public Map<String, Integer> getNameIds() {
+	public Map<String, Integer> nameIds() {
 		return nameIds;
 	}
 }

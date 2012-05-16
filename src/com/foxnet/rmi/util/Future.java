@@ -255,7 +255,7 @@ public class Future {
 	/**
 	 * @return the cause of this future.
 	 */
-	public Throwable getCause() {
+	public Throwable cause() {
 		// Volatile refresh
 		if (!completed) {
 			throw new IllegalStateException("Future is not completed yet");
@@ -267,7 +267,7 @@ public class Future {
 	/**
 	 * @return the attachment of this future.
 	 */
-	public Object getAttachment() {
+	public Object attachment() {
 		// Volatile refresh
 		if (!completed) {
 			throw new IllegalStateException("Future is not completed yet");

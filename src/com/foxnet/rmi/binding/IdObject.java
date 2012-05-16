@@ -61,7 +61,7 @@ public class IdObject implements Serializable {
 	/**
 	 * @return the id.
 	 */
-	public long getId() {
+	public long id() {
 		return id;
 	}
 }
