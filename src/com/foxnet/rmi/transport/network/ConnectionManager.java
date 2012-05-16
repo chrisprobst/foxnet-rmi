@@ -43,6 +43,7 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelHandler.Sharable;
+import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
@@ -59,11 +60,13 @@ import org.jboss.netty.handler.codec.serialization.ObjectDecoder;
 import org.jboss.netty.handler.codec.serialization.ObjectEncoder;
 import org.jboss.netty.util.internal.ExecutorUtil;
 
+import com.foxnet.rmi.InvokerManager;
 import com.foxnet.rmi.binding.registry.StaticRegistry;
 import com.foxnet.rmi.transport.network.handler.invocation.InvokerHandler;
 import com.foxnet.rmi.transport.network.handler.lookup.LookupHandler;
 import com.foxnet.rmi.transport.network.handler.reqres.ReqResHandler;
 import com.foxnet.rmi.transport.network.handler.setup.SetupHandler;
+import com.foxnet.rmi.util.Future;
 
 /**
  * @author Christopher Probst
@@ -208,12 +211,25 @@ public final class ConnectionManager implements ChannelPipelineFactory {
 		}
 	}
 
-	public Channel openClient(String host, int port) throws IOException {
-		return openClientAsync(host, port).awaitUninterruptibly().getChannel();
+	public InvokerManager openClient(String host, int port) throws IOException {
+		return InvokerHandler.of(openClientAsync(
+				new InetSocketAddress(host, port))
+				.awaitUninterruptibly().getChannel());
 	}
 
-	public ChannelFuture openClientAsync(String host, int port) {
-		return openClientAsync(new InetSocketAddress(host, port));
+	public Future openClientAsync(String host, int port) {
+		final Future future = new Future();
+		openClientAsync(new InetSocketAddress(host, port)).addListener(
+				new ChannelFutureListener() {
+
+					@Override
+					public void operationComplete(ChannelFuture arg0)
+							throws Exception {
+
+						future.complete(arg0.getChannel(), arg0.getCause());
+					}
+				});
+		return future;
 	}
 
 	public ChannelFuture openClientAsync(SocketAddress socketAddress) {

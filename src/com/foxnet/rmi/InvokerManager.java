@@ -13,15 +13,19 @@ public abstract class InvokerManager {
 	public abstract Object localToRemote(Object argument);
 
 	public Object[] localsToRemotes(Object... localArguments) {
-		for (int i = 0; i < localArguments.length; i++) {
-			localArguments[i] = localToRemote(localArguments[i]);
+		if (localArguments != null) {
+			for (int i = 0; i < localArguments.length; i++) {
+				localArguments[i] = localToRemote(localArguments[i]);
+			}
 		}
 		return localArguments;
 	}
 
 	public Object[] remotesToLocals(Object... remoteArguments) {
-		for (int i = 0; i < remoteArguments.length; i++) {
-			remoteArguments[i] = remoteToLocal(remoteArguments[i]);
+		if (remoteArguments != null) {
+			for (int i = 0; i < remoteArguments.length; i++) {
+				remoteArguments[i] = remoteToLocal(remoteArguments[i]);
+			}
 		}
 		return remoteArguments;
 	}

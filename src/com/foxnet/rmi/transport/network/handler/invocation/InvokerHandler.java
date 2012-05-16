@@ -66,7 +66,7 @@ public class InvokerHandler extends SimpleChannelHandler {
 
 					@Override
 					public void completed(Future future) throws Exception {
-						in.complete(future.getAttachment(), future.getCause());
+						in.complete(future.attachment(), future.cause());
 					}
 				});
 			} else {
@@ -125,12 +125,12 @@ public class InvokerHandler extends SimpleChannelHandler {
 				if (req.synchronize()) {
 
 					final RemoteBinding rb = new RemoteBinding(
-							(RemoteObject) req.getAttachment(), false);
+							(RemoteObject) req.attachment(), false);
 
 					return invoker(rb);
 
 				} else {
-					throw new IOException(req.getCause());
+					throw new IOException(req.cause());
 				}
 
 			}

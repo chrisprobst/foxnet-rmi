@@ -145,9 +145,9 @@ public abstract class Invoker extends InvokerManager implements
 
 		// Simply synchronize and return or throw
 		if (invocation.synchronize(proxyTimeout)) {
-			return invocation.getAttachment();
+			return invocation.attachment();
 		} else {
-			throw invocation.getCause();
+			throw invocation.cause();
 		}
 	}
 

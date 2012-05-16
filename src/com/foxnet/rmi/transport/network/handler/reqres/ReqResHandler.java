@@ -99,7 +99,7 @@ public final class ReqResHandler extends SimpleChannelHandler {
 
 						// Just write the response
 						channel.write(new ReqResMessage(
-								request.getAttachment(), request.getCause(),
+								request.attachment(), request.cause(),
 								request.getId(), false));
 					}
 				});
