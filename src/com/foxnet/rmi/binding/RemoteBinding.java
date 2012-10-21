@@ -87,8 +87,8 @@ public final class RemoteBinding extends Binding {
 
 		// Create maps
 		int index = 0;
-		Map<Method, Integer> tmpMethodIds = new HashMap<Method, Integer>();
-		Map<String, Integer> tmpNameIds = new HashMap<String, Integer>();
+		Map<Method, Integer> tmpMethodIds = new HashMap<>();
+		Map<String, Integer> tmpNameIds = new HashMap<>();
 		for (Method method : methods()) {
 			tmpMethodIds.put(method, index);
 			tmpNameIds.put(method.getName(), index++);

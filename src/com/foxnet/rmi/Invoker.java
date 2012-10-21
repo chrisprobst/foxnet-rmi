@@ -13,7 +13,7 @@
  *   notice, this list of conditions and the following disclaimer in the
  *   documentation and/or other materials provided with the distribution.
  *
- * * Neither the name of the 'FoxNet Codec' nor the names of its 
+ * * Neither the name of the 'FoxNet RMI' nor the names of its 
  *   contributors may be used to endorse or promote products derived
  *   from this software without specific prior written permission.
  *
@@ -31,24 +31,27 @@
  */
 package com.foxnet.rmi;
 
-import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
 import com.foxnet.rmi.binding.RemoteBinding;
-import com.foxnet.rmi.binding.registry.DynamicRegistry;
-import com.foxnet.rmi.binding.registry.StaticRegistry;
 
 /**
+ * An invoker can invoke methods synchronously/asynchronously or via a proxy
+ * object. Every invoker has an {@link InvokerManager} which is used to send
+ * Invocations.
  * 
  * @author Christopher Probst
- * 
  */
-public abstract class Invoker extends InvokerManager implements
-		InvocationHandler {
+public final class Invoker implements InvocationHandler {
 
-	public static Invoker getInvokerOf(Object proxy) {
+	/**
+	 * @param proxy
+	 *            The proxy.
+	 * @return the invoker instance of the given proxy or null.
+	 */
+	public static Invoker of(Object proxy) {
 		// Check to be a proxy class
 		if (proxy == null || !Proxy.isProxyClass(proxy.getClass())) {
 			return null;
@@ -59,10 +62,6 @@ public abstract class Invoker extends InvokerManager implements
 			// Conditional return...
 			return handler instanceof Invoker ? (Invoker) handler : null;
 		}
-	}
-
-	protected Invocation newInvocation(int methodId, Object... arguments) {
-		return new Invocation(this, methodId, arguments);
 	}
 
 	// The invoker manager which created this invoker
@@ -77,100 +76,96 @@ public abstract class Invoker extends InvokerManager implements
 	// The lazy proxy object which is created when needed
 	private volatile Object lazyProxy;
 
-	protected Invoker(InvokerManager invokerFactory, RemoteBinding remoteBinding) {
-		if (invokerFactory == null) {
-			throw new NullPointerException("invokerFactory");
+	/**
+	 * Creates a new invoker using the given arguments.
+	 * 
+	 * @param invokerManager
+	 *            The invoker manager.
+	 * @param remoteBinding
+	 *            The remote binding.
+	 */
+	public Invoker(InvokerManager invokerManager, RemoteBinding remoteBinding) {
+		if (invokerManager == null) {
+			throw new NullPointerException("invokerManager");
 		} else if (remoteBinding == null) {
 			throw new NullPointerException("remoteBinding");
 		}
-		this.invokerManager = invokerFactory;
+		this.invokerManager = invokerManager;
 		this.remoteBinding = remoteBinding;
 	}
 
+	/**
+	 * @return the proxy timeout which is used when invoking proxy methods.
+	 */
 	public long proxyTimeout() {
 		return proxyTimeout;
 	}
 
+	/**
+	 * Sets the proxy timeout which is used when invoking proxy methods.
+	 * 
+	 * @param proxyTimeout
+	 *            The new proxy timeout. A value <= 0 means waiting without a
+	 *            limit.
+	 * @return this for chaining.
+	 */
 	public Invoker proxyTimeout(long proxyTimeout) {
 		this.proxyTimeout = proxyTimeout;
 		return this;
 	}
 
+	/**
+	 * @return the invoker manager of this invoker.
+	 */
 	public InvokerManager manager() {
 		return invokerManager;
 	}
 
+	/**
+	 * @return the remote binding of this invoker.
+	 */
 	public RemoteBinding binding() {
 		return remoteBinding;
 	}
 
-	/*
-	 * (non-Javadoc)
+	/**
+	 * Invokes the method with the given method id and arguments. This method
+	 * should not be called directly.
 	 * 
-	 * @see
-	 * com.foxnet.rmi.InvokerManager#invoker(com.foxnet.rmi.binding.RemoteBinding
-	 * )
+	 * @param methodId
+	 *            The methodId.
+	 * @param arguments
+	 *            The arguments.
+	 * @return an invocation.
 	 */
-	@Override
-	public Invoker invoker(RemoteBinding remoteBinding) {
-		return invokerManager.invoker(remoteBinding);
+	public Invocation invoke(int methodId, Object... arguments) {
+		// Convert
+		invokerManager.localsToRemotes(arguments);
+
+		// Create invocation
+		Invocation invocation = new Invocation(this, methodId, arguments);
+
+		// Send the invocation
+		invokerManager.sendInvocation(invocation);
+
+		return invocation;
 	}
 
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.foxnet.rmi.InvokerManager#statically()
+	 * @see java.lang.reflect.InvocationHandler#invoke(java.lang.Object,
+	 * java.lang.reflect.Method, java.lang.Object[])
 	 */
-	@Override
-	public StaticRegistry statically() {
-		return invokerManager.statically();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.foxnet.rmi.InvokerManager#dynamically()
-	 */
-	@Override
-	public DynamicRegistry dynamically() {
-		return invokerManager.dynamically();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.foxnet.rmi.InvokerManager#lookupInvoker(java.lang.String)
-	 */
-	@Override
-	public Invoker lookupInvoker(String target) throws IOException {
-		return invokerManager.lookupInvoker(target);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.foxnet.rmi.InvokerManager#localToRemote(java.lang.Object)
-	 */
-	@Override
-	public Object localToRemote(Object argument) {
-		return invokerManager.localToRemote(argument);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.foxnet.rmi.InvokerManager#remoteToLocal(java.lang.Object)
-	 */
-	@Override
-	public Object remoteToLocal(Object argument) {
-		return invokerManager.remoteToLocal(argument);
-	}
-
-	public abstract Invocation invoke(int methodId, Object... args);
-
 	@Override
 	public Object invoke(Object proxy, Method method, Object[] args)
 			throws Throwable {
+
+		// Check the proxy class
+		if (lazyProxy == null || lazyProxy != proxy) {
+			throw new IllegalArgumentException("The given proxy is not "
+					+ "the valid proxy of this invoker");
+		}
 
 		// Invoke the method remotely
 		Invocation invocation = invoke(method, args);
@@ -183,23 +178,47 @@ public abstract class Invoker extends InvokerManager implements
 		}
 	}
 
-	public Invocation invoke(Method method, Object... args) {
+	/**
+	 * Invokes the given method with the given arguments.
+	 * 
+	 * @param method
+	 *            The method.
+	 * @param arguments
+	 *            The arguments.
+	 * @return an invocation.
+	 */
+	public Invocation invoke(Method method, Object... arguments) {
 		Integer methodId = remoteBinding.methodIds().get(method);
 		if (methodId == null) {
 			throw new IllegalArgumentException("Unknown method");
 		}
-		return invoke(methodId, args);
+		return invoke(methodId, arguments);
 	}
 
-	public Invocation invoke(String method, Object... args) {
-		Integer methodId = remoteBinding.nameIds().get(method);
+	/**
+	 * Invokes the method with the given name and arguments.
+	 * 
+	 * @param methodName
+	 *            The method name.
+	 * @param arguments
+	 *            The arguments.
+	 * @return an invocation.
+	 */
+	public Invocation invoke(String methodName, Object... arguments) {
+		Integer methodId = remoteBinding.nameIds().get(methodName);
 		if (methodId == null) {
 			throw new IllegalArgumentException("Unknown method name");
 		}
-		return invoke(methodId, args);
+		return invoke(methodId, arguments);
 	}
 
+	/**
+	 * @return the proxy object for this invoker.
+	 */
 	public Object proxy() {
+		/*
+		 * Use double-check idiom here.
+		 */
 		Object tmpProxy = lazyProxy;
 		if (tmpProxy == null) {
 			synchronized (this) {

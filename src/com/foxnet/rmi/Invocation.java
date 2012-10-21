@@ -13,7 +13,7 @@
  *   notice, this list of conditions and the following disclaimer in the
  *   documentation and/or other materials provided with the distribution.
  *
- * * Neither the name of the 'FoxNet Codec' nor the names of its 
+ * * Neither the name of the 'FoxNet RMI' nor the names of its 
  *   contributors may be used to endorse or promote products derived
  *   from this software without specific prior written permission.
  *
@@ -33,55 +33,98 @@ package com.foxnet.rmi;
 
 import java.lang.reflect.Method;
 
-import com.foxnet.rmi.util.Future;
+import com.foxnet.rmi.util.concurrent.Future;
 
 /**
+ * An invocation is basically a future with some further information.
  * 
  * @author Christopher Probst
- * 
  */
 public final class Invocation extends Future {
 
 	// The invoker of this invocation
 	private final Invoker invoker;
 
-	// The method id of the invoked method
-	private final int methodId;
+	// The invocation message of this invocation
+	private final InvocationMessage invocationMessage;
 
-	// The arguments of the invocation
-	private final Object[] arguments;
-
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.foxnet.rmi.util.Future#modifyAttachment(java.lang.Object)
+	 */
 	@Override
 	protected Object modifyAttachment(Object attachment) {
-		return invoker.remoteToLocal(attachment);
+		return invoker.manager().remoteToLocal(attachment);
 	}
 
+	/**
+	 * Creates a new invocation with the given arguments.
+	 * 
+	 * @param invoker
+	 *            The invoker.
+	 * @param methodId
+	 *            The method id.
+	 * @param arguments
+	 *            The arguments.
+	 */
 	Invocation(Invoker invoker, int methodId, Object... arguments) {
 		if (invoker == null) {
 			throw new NullPointerException("invoker");
 		}
-		this.methodId = methodId;
-		this.arguments = arguments;
+
+		// Create the new invocation message
+		invocationMessage = new InvocationMessage(
+				invoker.binding().isDynamic(), invoker.binding().id(),
+				methodId, arguments);
+
+		// Save the invoker
 		this.invoker = invoker;
 	}
 
+	/**
+	 * @return true if and only if the invoked method is marked as asynchronous
+	 *         and return void.
+	 */
+	public boolean isAsyncVoid() {
+		// Annotation
+		AsyncVoid av;
+
+		// Get method...
+		Method method = method();
+
+		// Check for async void method
+		return method.getReturnType() == void.class
+				&& method.getExceptionTypes().length == 0
+				&& ((av = method.getAnnotation(AsyncVoid.class)) != null && av
+						.value());
+	}
+
+	/**
+	 * @return the invoker.
+	 */
 	public Invoker invoker() {
 		return invoker;
 	}
 
+	/**
+	 * @return the method.
+	 */
 	public Method method() {
-		return invoker.binding().methods().get(methodId);
+		return invoker.binding().methods().get(invocationMessage.methodId());
 	}
 
+	/**
+	 * @return the method name.
+	 */
 	public String methodName() {
 		return method().getName();
 	}
 
-	public int methodId() {
-		return methodId;
-	}
-
-	public Object[] arguments() {
-		return arguments;
+	/**
+	 * @return the message of this invocation which can be transferred.
+	 */
+	public InvocationMessage message() {
+		return invocationMessage;
 	}
 }

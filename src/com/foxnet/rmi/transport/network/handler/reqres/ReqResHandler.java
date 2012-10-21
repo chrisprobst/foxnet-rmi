@@ -15,9 +15,9 @@ import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
 
-import com.foxnet.rmi.util.Future;
-import com.foxnet.rmi.util.FutureCallback;
-import com.foxnet.rmi.util.Request;
+import com.foxnet.rmi.util.concurrent.Future;
+import com.foxnet.rmi.util.concurrent.FutureCallback;
+import com.foxnet.rmi.util.concurrent.Request;
 
 @Sharable
 public final class ReqResHandler extends SimpleChannelHandler {
@@ -26,6 +26,19 @@ public final class ReqResHandler extends SimpleChannelHandler {
 
 	// The logger
 	protected final Logger logger = Logger.getLogger(getClass().getName());
+
+	@SuppressWarnings("unchecked")
+	private static void cancelRequests(ChannelHandlerContext ctx) {
+
+		// Lookup the queue
+		ConcurrentMap<Long, Request> requests = (ConcurrentMap<Long, Request>) ctx
+				.getAttachment();
+
+		// Finish the remaining requests
+		for (Object request : requests.values().toArray()) {
+			((Request) request).fail(new ClosedChannelException());
+		}
+	}
 
 	/*
 	 * (non-Javadoc)
@@ -51,22 +64,12 @@ public final class ReqResHandler extends SimpleChannelHandler {
 	 * netty.channel.ChannelHandlerContext,
 	 * org.jboss.netty.channel.ChannelStateEvent)
 	 */
-	@SuppressWarnings("unchecked")
+
 	@Override
 	public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e)
 			throws Exception {
-
-		// Lookup the queue
-		ConcurrentMap<Long, Request> requests = (ConcurrentMap<Long, Request>) ctx
-				.getAttachment();
-
-		// Clear the requests
-		ctx.setAttachment(null);
-
-		// Finish the remaining requests
-		for (Object request : requests.values().toArray()) {
-			((Request) request).fail(new ClosedChannelException());
-		}
+		// Cancel the requests
+		cancelRequests(ctx);
 
 		super.channelClosed(ctx, e);
 	}
@@ -98,9 +101,8 @@ public final class ReqResHandler extends SimpleChannelHandler {
 						Request request = (Request) future;
 
 						// Just write the response
-						channel.write(new ReqResMessage(
-								request.attachment(), request.cause(),
-								request.getId(), false));
+						channel.write(new ReqResMessage(request.attachment(),
+								request.cause(), request.id(), false));
 					}
 				});
 
@@ -145,7 +147,7 @@ public final class ReqResHandler extends SimpleChannelHandler {
 					.getAttachment();
 
 			// Try to save the request or fail it
-			if (requests.putIfAbsent(request.getId(), request) != null) {
+			if (requests.putIfAbsent(request.id(), request) != null) {
 				request.fail(new IllegalStateException("The request "
 						+ "id is already used"));
 			} else {
@@ -154,7 +156,7 @@ public final class ReqResHandler extends SimpleChannelHandler {
 
 					@Override
 					public void completed(Future future) throws Exception {
-						requests.remove(((Request) future).getId());
+						requests.remove(((Request) future).id());
 					}
 				});
 

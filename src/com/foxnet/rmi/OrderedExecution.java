@@ -13,7 +13,7 @@
  *   notice, this list of conditions and the following disclaimer in the
  *   documentation and/or other materials provided with the distribution.
  *
- * * Neither the name of the 'FoxNet Codec' nor the names of its 
+ * * Neither the name of the 'FoxNet RMI' nor the names of its 
  *   contributors may be used to endorse or promote products derived
  *   from this software without specific prior written permission.
  *
@@ -37,6 +37,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
+ * Used to mark methods as ordered-executed. This means these methods are never
+ * executed at the same time. This can be useful for asynchronous-void methods.
+ * 
  * @author Christopher Probst
  */
 @Retention(RetentionPolicy.RUNTIME)

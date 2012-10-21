@@ -60,7 +60,6 @@ public abstract class LocalBinding extends Binding {
 	/**
 	 * 
 	 */
-
 	private static final long serialVersionUID = 1L;
 
 	/**
@@ -87,31 +86,25 @@ public abstract class LocalBinding extends Binding {
 	 */
 	private static void collectAllRemoteInterfaces(Class<?> startClass,
 			Class<?> endClass, Set<Class<?>> interfaces) {
+		if (startClass == null) {
+			throw new NullPointerException("startClass");
+		} else if (endClass == null) {
+			throw new NullPointerException("endClass");
+		} else if (interfaces == null) {
+			throw new NullPointerException("interfaces");
+		} else if (!startClass.isAssignableFrom(endClass)) {
+			throw new IllegalArgumentException("The start class must be "
+					+ "a super class of the end class");
+		}
 
-		// Start with the end class
-		Class<?> pointer = endClass;
-
-		// Used to return when finished
-		boolean finished = false;
-
-		do {
-
-			// The finished parameter
-			finished = pointer == startClass;
-
-			// For all interfaces
+		for (Class<?> pointer = endClass; pointer != startClass; pointer = pointer
+				.getSuperclass()) {
 			for (Class<?> interfaceClass : pointer.getInterfaces()) {
-				// Check
 				if (isValidRemoteInterface(interfaceClass)) {
-					// Add to set
 					interfaces.add(interfaceClass);
 				}
 			}
-
-			// Save
-			pointer = pointer.getSuperclass();
-
-		} while (!finished);
+		}
 	}
 
 	/**
@@ -123,7 +116,7 @@ public abstract class LocalBinding extends Binding {
 	 *            The remote target.
 	 * @return an array with all valid remote interfaces.
 	 */
-	private static Class<?>[] getRemoteInterfaces(Remote target) {
+	private static Class<?>[] remoteInterfaces(Remote target) {
 		if (target == null) {
 			throw new NullPointerException("target");
 		}
@@ -133,7 +126,7 @@ public abstract class LocalBinding extends Binding {
 				RemoteInterfaces.class);
 
 		// Used to collect the interfaces
-		Set<Class<?>> uniqueInterfaces = new HashSet<Class<?>>();
+		Set<Class<?>> uniqueInterfaces = new HashSet<>();
 
 		/*
 		 * Use the classes from the annotation.
@@ -252,7 +245,7 @@ public abstract class LocalBinding extends Binding {
 	 *            The target of this binding.
 	 */
 	public LocalBinding(long id, Remote target) {
-		this(id, target, getRemoteInterfaces(target));
+		this(id, target, remoteInterfaces(target));
 	}
 
 	/**
@@ -294,7 +287,7 @@ public abstract class LocalBinding extends Binding {
 
 				// Lazy setup
 				if (tmpOrderedExecutionQueues == null) {
-					tmpOrderedExecutionQueues = new HashMap<Integer, OrderedExecutionQueue>();
+					tmpOrderedExecutionQueues = new HashMap<>();
 				}
 
 				// Create new queue

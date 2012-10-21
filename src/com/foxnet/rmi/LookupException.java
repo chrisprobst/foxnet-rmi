@@ -31,19 +31,30 @@
  */
 package com.foxnet.rmi;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
 /**
- * Used to mark methods which do return void as asynchronous.
+ * A lookup exception is thrown when a lookup attempt failed.
  * 
  * @author Christopher Probst
  */
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface AsyncVoid {
+public class LookupException extends Exception {
 
-	boolean value() default true;
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	public LookupException() {
+	}
+
+	public LookupException(String message, Throwable cause) {
+		super(message, cause);
+	}
+
+	public LookupException(String message) {
+		super(message);
+	}
+
+	public LookupException(Throwable cause) {
+		super(cause);
+	}
 }

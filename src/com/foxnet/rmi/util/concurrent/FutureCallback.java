@@ -29,21 +29,23 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.foxnet.rmi;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+package com.foxnet.rmi.util.concurrent;
 
 /**
- * Used to mark methods which do return void as asynchronous.
+ * The future callback.
  * 
  * @author Christopher Probst
+ * @see Future
  */
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface AsyncVoid {
+public interface FutureCallback {
 
-	boolean value() default true;
+	/**
+	 * This method is invoked when the given future is completed.
+	 * 
+	 * @param future
+	 *            The future.
+	 * @throws Exception
+	 *             If an exception occured.
+	 */
+	void completed(Future future) throws Exception;
 }

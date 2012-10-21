@@ -36,6 +36,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.bootstrap.ServerBootstrap;
@@ -43,7 +44,6 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelHandler.Sharable;
-import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
@@ -66,7 +66,6 @@ import com.foxnet.rmi.transport.network.handler.invocation.InvokerHandler;
 import com.foxnet.rmi.transport.network.handler.lookup.LookupHandler;
 import com.foxnet.rmi.transport.network.handler.reqres.ReqResHandler;
 import com.foxnet.rmi.transport.network.handler.setup.SetupHandler;
-import com.foxnet.rmi.util.Future;
 
 /**
  * @author Christopher Probst
@@ -144,6 +143,9 @@ public final class ConnectionManager implements ChannelPipelineFactory {
 	// Create a channel group to store connections
 	private final ChannelGroup channels = new DefaultChannelGroup();
 
+	// The disposed flag
+	private final AtomicBoolean disposed = new AtomicBoolean(false);
+
 	public ConnectionManager(boolean serversOnly) {
 		this(null, serversOnly, !serversOnly);
 	}
@@ -211,25 +213,24 @@ public final class ConnectionManager implements ChannelPipelineFactory {
 		}
 	}
 
-	public InvokerManager openClient(String host, int port) throws IOException {
-		return InvokerHandler.of(openClientAsync(
-				new InetSocketAddress(host, port)).awaitUninterruptibly()
-				.getChannel());
+	public InvokerManager openClient(SocketAddress socketAddress)
+			throws IOException {
+		// Get future
+		ChannelFuture connectFuture = openClientAsync(socketAddress);
+
+		// Await!
+		connectFuture.awaitUninterruptibly();
+
+		if (!connectFuture.isSuccess()) {
+			throw new IOException("Connection failed", connectFuture.getCause());
+		}
+
+		// Extract handler
+		return InvokerHandler.of(connectFuture.getChannel());
 	}
 
-	public Future openClientAsync(String host, int port) {
-		final Future future = new Future();
-		openClientAsync(new InetSocketAddress(host, port)).addListener(
-				new ChannelFutureListener() {
-
-					@Override
-					public void operationComplete(ChannelFuture arg0)
-							throws Exception {
-
-						future.complete(arg0.getChannel(), arg0.getCause());
-					}
-				});
-		return future;
+	public InvokerManager openClient(String host, int port) throws IOException {
+		return openClient(new InetSocketAddress(host, port));
 	}
 
 	public ChannelFuture openClientAsync(SocketAddress socketAddress) {
@@ -259,8 +260,35 @@ public final class ConnectionManager implements ChannelPipelineFactory {
 		// Setup the pipeline
 		ChannelPipeline channelPipeline = Channels.pipeline();
 
+		// channelPipeline.addLast("t", new SimpleChannelHandler() {
+		//
+		// long d = System.currentTimeMillis();
+		// int count = 0;
+		//
+		// @Override
+		// public void writeRequested(ChannelHandlerContext ctx, MessageEvent e)
+		// throws Exception {
+		//
+		// synchronized (ctx) {
+		// count += ((ChannelBuffer) e.getMessage()).readableBytes();
+		//
+		// if (System.currentTimeMillis() - d > 1000) {
+		// System.out.println(count + " Bytes/s");
+		// count = 0;
+		// d = System.currentTimeMillis();
+		// }
+		// }
+		//
+		// super.writeRequested(ctx, e);
+		// }
+		// });
+
 		// Used to identify the channel
 		channelPipeline.addLast("id_handler", identificationHandler);
+
+		// Add good compression
+		// channelPipeline.addLast("in_com", new ZlibDecoder());
+		// channelPipeline.addLast("out_com", new ZlibEncoder(1));
 
 		// Add config manager
 		channelPipeline.addLast("cfg", SetupHandler.INSTANCE);
@@ -268,11 +296,12 @@ public final class ConnectionManager implements ChannelPipelineFactory {
 		// Use the default decoder
 		channelPipeline.addLast(
 				"obj_decoder",
-				new ObjectDecoder(ClassResolvers.weakCachingResolver(Thread
-						.currentThread().getContextClassLoader())));
+				new ObjectDecoder(Integer.MAX_VALUE, ClassResolvers
+						.weakCachingResolver(Thread.currentThread()
+								.getContextClassLoader())));
 
 		// Use the default encoder
-		channelPipeline.addLast("obj_encoder", new ObjectEncoder());
+		channelPipeline.addLast("obj_encoder", new ObjectEncoder(0xFFFF));
 
 		// The request response handler
 		channelPipeline.addLast("reqres", ReqResHandler.INSTANCE);
@@ -310,22 +339,33 @@ public final class ConnectionManager implements ChannelPipelineFactory {
 		return channels;
 	}
 
-	public StaticRegistry statically() {
+	public StaticRegistry staticReg() {
 		return staticRegistry;
 	}
 
-	public void shudown() {
-		// Close all channels and wait uninterruptibly
-		channels.close().awaitUninterruptibly();
+	public boolean isDisposed() {
+		return disposed.get();
+	}
 
-		// Release resources
-		ExecutorUtil.terminate(methodInvocator);
+	public ConnectionManager dispose() {
+		/*
+		 * Only dispose once.
+		 */
+		if (!disposed.getAndSet(true)) {
 
-		if (isSupportingServers()) {
-			serverBootstrap.releaseExternalResources();
+			// Close all channels and wait uninterruptibly
+			channels.close().awaitUninterruptibly();
+
+			// Release resources
+			ExecutorUtil.terminate(methodInvocator);
+
+			if (isSupportingServers()) {
+				serverBootstrap.releaseExternalResources();
+			}
+			if (isSupportingClients()) {
+				clientBootstrap.releaseExternalResources();
+			}
 		}
-		if (isSupportingClients()) {
-			clientBootstrap.releaseExternalResources();
-		}
+		return this;
 	}
 }

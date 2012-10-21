@@ -29,21 +29,71 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.foxnet.rmi;
+package com.foxnet.rmi.util.concurrent;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Used to mark methods which do return void as asynchronous.
  * 
  * @author Christopher Probst
+ * 
  */
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface AsyncVoid {
+public final class Request extends Future {
 
-	boolean value() default true;
+	// The INVALID id
+	public static final long INVALID_ID = 0;
+
+	// Used to create ids
+	public static final AtomicLong ID_GENERATOR = new AtomicLong(INVALID_ID + 1);
+
+	// Used to identify the request
+	private final long id;
+
+	// Used to store the initial data
+	private final Object data;
+
+	/**
+	 * Creates a new request using the given data and a generated unique id.
+	 * 
+	 * @param data
+	 *            The data of this request.
+	 */
+	public Request(Object data) {
+		this(data, ID_GENERATOR.getAndIncrement());
+	}
+
+	/**
+	 * Creates a new request using the given arguments.
+	 * 
+	 * @param data
+	 *            The data of this request.
+	 * @param id
+	 *            The id of this request.
+	 */
+	public Request(Object data, long id) {
+
+		if (id == INVALID_ID) {
+			throw new IllegalArgumentException("The id is invalid");
+		}
+
+		// The id of this request
+		this.id = id;
+
+		// Save the initial data
+		this.data = data;
+	}
+
+	/**
+	 * @return the data of this request.
+	 */
+	public Object data() {
+		return data;
+	}
+
+	/**
+	 * @return the id of this request.
+	 */
+	public long id() {
+		return id;
+	}
 }

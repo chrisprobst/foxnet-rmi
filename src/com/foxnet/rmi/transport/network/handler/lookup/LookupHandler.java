@@ -39,7 +39,7 @@ import org.jboss.netty.channel.ChannelHandler.Sharable;
 import com.foxnet.rmi.binding.RemoteObject;
 import com.foxnet.rmi.binding.StaticBinding;
 import com.foxnet.rmi.transport.network.ConnectionManager;
-import com.foxnet.rmi.util.Request;
+import com.foxnet.rmi.util.concurrent.Request;
 
 /**
  * 
@@ -73,13 +73,13 @@ public final class LookupHandler extends SimpleChannelUpstreamHandler {
 		if (e.getMessage() instanceof Request) {
 			Request request = (Request) e.getMessage();
 
-			if (request.getData() instanceof LookupMessage) {
+			if (request.data() instanceof LookupMessage) {
 
-				LookupMessage lm = (LookupMessage) request.getData();
+				LookupMessage lm = (LookupMessage) request.data();
 
 				if (lm.target() != null) {
 
-					StaticBinding sb = cm.statically().get(lm.target());
+					StaticBinding sb = cm.staticReg().get(lm.target());
 
 					if (sb == null) {
 
@@ -87,10 +87,11 @@ public final class LookupHandler extends SimpleChannelUpstreamHandler {
 								"Unknown target argument"));
 
 					} else {
+
 						request.succeed(new RemoteObject(sb));
 					}
 				} else {
-					request.succeed(cm.statically().getNames());
+					request.succeed(cm.staticReg().names());
 				}
 
 				return;

@@ -70,7 +70,7 @@ public abstract class Binding extends RemoteObject {
 		}
 
 		// Tmp hash map for storing information about the methods
-		SortedMap<String, Method> methodMap = new TreeMap<String, Method>();
+		SortedMap<String, Method> methodMap = new TreeMap<>();
 
 		// Collect all methods
 		for (Class<?> interfaceClass : interfaces) {
@@ -102,7 +102,7 @@ public abstract class Binding extends RemoteObject {
 		}
 
 		// Get array
-		methods = Collections.unmodifiableList(new ArrayList<Method>(methodMap
+		methods = Collections.unmodifiableList(new ArrayList<>(methodMap
 				.values()));
 	}
 
