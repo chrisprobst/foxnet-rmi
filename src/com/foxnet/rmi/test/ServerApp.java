@@ -24,7 +24,7 @@ public class ServerApp implements ServerInterface, Remote {
 		ConnectionManager cm = new ConnectionManager(true);
 
 		cm.openServer(1337);
-		cm.getStaticRegistry().bind("void-stuff", new ServerApp());
+		cm.statically().bind("void-stuff", new ServerApp());
 
 		// CLIENT
 		ConnectionManager ccm = new ConnectionManager(false);

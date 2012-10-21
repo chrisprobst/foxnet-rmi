@@ -109,7 +109,7 @@ public class InvokerHandler extends SimpleChannelHandler {
 
 			@Override
 			public StaticRegistry statically() {
-				return ConnectionManager.of(c).getStaticRegistry();
+				return ConnectionManager.of(c).statically();
 			}
 
 			@Override
@@ -132,9 +132,7 @@ public class InvokerHandler extends SimpleChannelHandler {
 				} else {
 					throw new IOException(req.cause());
 				}
-
 			}
-
 		});
 
 		super.channelOpen(ctx, e);
@@ -171,10 +169,9 @@ public class InvokerHandler extends SimpleChannelHandler {
 			if (cm != null) {
 
 				// Do invocation
-				RmiRoutines.invoke(im.isDynamic(), im.getBindingId(),
-						cm.getMethodInvocator(), fac, fut, im.getMethodId(),
-						im.getArguments());
-
+				RmiRoutines.invoke(im.isDynamic(), im.bindingId(),
+						cm.methodInvocator(), fac, fut, im.methodId(),
+						im.arguments());
 			}
 		} else {
 

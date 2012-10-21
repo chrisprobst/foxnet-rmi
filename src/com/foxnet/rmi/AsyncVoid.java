@@ -39,8 +39,8 @@ import java.lang.annotation.Target;
 /**
  * @author Christopher Probst
  */
-@Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
 public @interface AsyncVoid {
 
 	boolean value() default true;

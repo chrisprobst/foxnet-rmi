@@ -30,15 +30,15 @@ public class InvocationMessage implements Serializable {
 		return dynamic;
 	}
 
-	public long getBindingId() {
+	public long bindingId() {
 		return bindingId;
 	}
 
-	public int getMethodId() {
+	public int methodId() {
 		return methodId;
 	}
 
-	public Object[] getArguments() {
+	public Object[] arguments() {
 		return arguments;
 	}
 }

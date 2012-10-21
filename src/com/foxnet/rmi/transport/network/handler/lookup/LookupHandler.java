@@ -77,10 +77,9 @@ public final class LookupHandler extends SimpleChannelUpstreamHandler {
 
 				LookupMessage lm = (LookupMessage) request.getData();
 
-				if (lm.getTarget() != null) {
+				if (lm.target() != null) {
 
-					StaticBinding sb = cm.getStaticRegistry().get(
-							lm.getTarget());
+					StaticBinding sb = cm.statically().get(lm.target());
 
 					if (sb == null) {
 
@@ -88,11 +87,10 @@ public final class LookupHandler extends SimpleChannelUpstreamHandler {
 								"Unknown target argument"));
 
 					} else {
-
 						request.succeed(new RemoteObject(sb));
 					}
 				} else {
-					request.succeed(cm.getStaticRegistry().getNames());
+					request.succeed(cm.statically().getNames());
 				}
 
 				return;

@@ -45,7 +45,7 @@ final class LookupMessage implements Serializable {
 		this.target = target;
 	}
 
-	public String getTarget() {
+	public String target() {
 		return target;
 	}
 }

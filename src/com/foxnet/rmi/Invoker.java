@@ -104,31 +104,63 @@ public abstract class Invoker extends InvokerManager implements
 		return remoteBinding;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * com.foxnet.rmi.InvokerManager#invoker(com.foxnet.rmi.binding.RemoteBinding
+	 * )
+	 */
 	@Override
 	public Invoker invoker(RemoteBinding remoteBinding) {
 		return invokerManager.invoker(remoteBinding);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.foxnet.rmi.InvokerManager#statically()
+	 */
 	@Override
 	public StaticRegistry statically() {
 		return invokerManager.statically();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.foxnet.rmi.InvokerManager#dynamically()
+	 */
 	@Override
 	public DynamicRegistry dynamically() {
 		return invokerManager.dynamically();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.foxnet.rmi.InvokerManager#lookupInvoker(java.lang.String)
+	 */
 	@Override
 	public Invoker lookupInvoker(String target) throws IOException {
 		return invokerManager.lookupInvoker(target);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.foxnet.rmi.InvokerManager#localToRemote(java.lang.Object)
+	 */
 	@Override
 	public Object localToRemote(Object argument) {
 		return invokerManager.localToRemote(argument);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.foxnet.rmi.InvokerManager#remoteToLocal(java.lang.Object)
+	 */
 	@Override
 	public Object remoteToLocal(Object argument) {
 		return invokerManager.remoteToLocal(argument);
